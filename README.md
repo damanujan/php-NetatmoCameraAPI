@@ -3,7 +3,7 @@
 ## This API allow full control of your Netatmo Presence cameras
 (C) 2017, KiboOst
 
-This API allow you to fully control Netatmo Presence cameras settings, like notifications, monitoring, floodlight.
+This API allow you to fully control Netatmo Presence cameras settings, monitoring, floodlight (mode, intensity, records), and alerts settings.
 
 - No need for official Netatmo SDK or any other ressources!
 - No need for Netatmo connect application
@@ -63,9 +63,9 @@ Here are function to CHANGE your camera settings:
 *Change camera name by yours!*
 
 ```php
-//SET alerts (here, only for person and other movements):
+//SET events recording (here, only for person and other movements):
 //in order: always, person, vehicle, animal, movement
-$alerts = $_Presence->setAlerts("myCamera", false, true, false, false, true);
+$alerts = $_Presence->setRecording("myCamera", false, true, false, false, true);
 echo "<pre>alerts:<br>".json_encode($alerts, JSON_PRETTY_PRINT)."</pre><br>";
 
 //SET floolight mode (auto, on, off):
@@ -75,6 +75,25 @@ echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><
 //SET monitoring on/off
 $monitoring = $_Presence->setMonitoring("myCamera", "on");
 echo "<pre>monitoring:<br>".json_encode($monitoring, JSON_PRETTY_PRINT)."</pre><br>";
+
+//SET alert level for human detection:
+//0: ignore, 1: record, 2: record and notify
+$alert = $_Presence->setHumanAlert(1);
+echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
+
+//SET alert level for animal detection:
+$alert = $_Presence->setAnimalAlert(1);
+//SET alert level for vehicle detection:
+$alert = $_Presence->setVehicleAlert(1);
+//SET alert level for other movement detection:
+$alert = $_Presence->setOtherAlert(1);
+
+//SET alert time from 10h15 (always use hh:mm)
+$alert = $_Presence->setAlertFrom('10:15');
+echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
+
+//SET alert time to 22h00
+$alert = $_Presence->setAlertFrom('22:00');
 ```
 
 ## Changes
