@@ -9,6 +9,15 @@ This API allow you to fully control Netatmo Presence cameras settings, monitorin
 - No need for Netatmo connect application
 - You need only your Netatmo account login and password.
 
+The following operations are currently supported:
+
+- Get and Set alerts (ignore, record, record and notify) for humans, vehicle, animal, other.
+- Get and Set alerts hours.
+- Get and Set record or not for each events
+- Get events (filtered by type or not).
+- Get camera(s) status.
+- Get SmartZones (we could set them but dunno if useful...).
+
 **This isn't an official API | USE AT YOUR OWN RISK!**
 
 Feel free to submit an issue or pull request to add more.
