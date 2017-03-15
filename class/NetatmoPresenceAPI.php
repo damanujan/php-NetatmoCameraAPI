@@ -328,6 +328,7 @@ class NetatmoPresenceAPI {
 
 		$jsonDatas = json_decode($answer, true);
 		$this->_homeID = $jsonDatas['body']['homes'][0]['id'];
+		$this->_home = $jsonDatas['body']['homes'][0]['name'];
 		$this->_fullDatas = $jsonDatas;
 	}
 
@@ -488,11 +489,11 @@ class NetatmoPresenceAPI {
 		*/
 	}
 
-	public $_home;
+	public $_home = null;
+	public $_homeID = null;
 	public $_fullDatas;
 	public $_cameras;
 
-	protected $_homeID = null;
 	protected $_Netatmo_user;
 	protected $_Netatmo_pass;
 	protected $_csrf = null;
