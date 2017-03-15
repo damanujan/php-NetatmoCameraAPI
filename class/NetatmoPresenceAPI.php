@@ -21,6 +21,123 @@ class NetatmoPresenceAPI {
 
 	//user functions======================================================
 	//GET:
+
+	//for alerts: 0: ignore, 1: record, 2: record and notify
+	public function setHumanAlert($value)
+	{
+		$mode = null;
+		if ($value == 0) $mode = 'ignore';
+		if ($value == 1) $mode = 'record';
+		if ($value == 2) $mode = 'record_and_notify';
+		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
+
+		$setting = 'presence_settings[presence_record_humans]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setAnimalAlert($value)
+	{
+		$mode = null;
+		if ($value == 0) $mode = 'ignore';
+		if ($value == 1) $mode = 'record';
+		if ($value == 2) $mode = 'record_and_notify';
+		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
+
+		$setting = 'presence_settings[presence_record_animals]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setVehicleAlert($value)
+	{
+		$mode = null;
+		if ($value == 0) $mode = 'ignore';
+		if ($value == 1) $mode = 'record';
+		if ($value == 2) $mode = 'record_and_notify';
+		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
+
+		$setting = 'presence_settings[presence_record_vehicles]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setOtherAlert($value)
+	{
+		$mode = null;
+		if ($value == 0) $mode = 'ignore';
+		if ($value == 1) $mode = 'record';
+		if ($value == 2) $mode = 'record_and_notify';
+		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
+
+		$setting = 'presence_settings[presence_record_movements]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setAlertFrom($from)
+	{
+		$var = explode(':', $from);
+		if(count($var)==2)
+		{
+			$h = $var[0];
+			$m = $var[1];
+			$timeString = $h*3600 + $m*60;
+		}
+		else
+		{
+			return array('error'=>'Use time as string "10:30"');
+		}
+
+		$setting = 'presence_settings[presence_notify_from]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setAlertTo($to)
+	{
+		$var = explode(':', $from);
+		if(count($var)==2)
+		{
+			$h = $var[0];
+			$m = $var[1];
+			$timeString = $h*3600 + $m*60;
+		}
+		else
+		{
+			return array('error'=>'Use time as string "10:30"');
+		}
+
+		$setting = 'presence_settings[presence_notify_to]';
+		$url = 'https://my.netatmo.com/api/updatehome';
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
+
+		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+
 	public function getSettings($camera)
 	{
 		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
@@ -108,7 +225,7 @@ class NetatmoPresenceAPI {
 		return array('result'=>$answer);
 	}
 
-	public function setAlerts($camera, $always, $person, $vehicle, $animal, $movement) // true false
+	public function setRecording($camera, $always, $person, $vehicle, $animal, $movement) // true false
 	{
 		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
 		if ( isset($camera['error']) ) return $camera;
@@ -210,6 +327,7 @@ class NetatmoPresenceAPI {
 		$answer = $this->_request('POST', $url);
 
 		$jsonDatas = json_decode($answer, true);
+		$this->_homeID = $jsonDatas['body']['homes'][0]['id'];
 		$this->_fullDatas = $jsonDatas;
 	}
 
@@ -282,7 +400,7 @@ class NetatmoPresenceAPI {
 				curl_setopt($this->_curlHdl, CURLOPT_HEADER, false);
 				curl_setopt($this->_curlHdl, CURLOPT_HTTPHEADER, array(
 														'Connection: keep-alive',
-														'Content-Type: application/json',
+														'Content-Type: application/x-www-form-urlencoded',
 														'Authorization: Bearer '.$this->_token,
 														)
 													);
@@ -373,6 +491,8 @@ class NetatmoPresenceAPI {
 	public $_home;
 	public $_fullDatas;
 	public $_cameras;
+
+	protected $_homeID = null;
 	protected $_Netatmo_user;
 	protected $_Netatmo_pass;
 	protected $_csrf = null;
