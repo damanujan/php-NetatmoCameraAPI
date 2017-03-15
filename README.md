@@ -52,7 +52,8 @@ Here are functions to get actual settings:
 $cameras = $_Presence->getCameras();
 echo "<pre>cameras:<br>".json_encode($cameras, JSON_PRETTY_PRINT)."</pre><br>";
 
-//get last 10 events of all type. You can request All, or only human, animal, vehicle, movement
+//get last 10 events of all type.
+//You can request All, or only human, animal, vehicle, movement
 $answer = $_Presence->getEvents("All", $num=10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
 
@@ -78,7 +79,7 @@ Here are function to CHANGE your camera settings:
 $alerts = $_Presence->setRecording("myCamera", false, true, false, false, true);
 echo "<pre>alerts:<br>".json_encode($alerts, JSON_PRETTY_PRINT)."</pre><br>";
 
-//SET floolight mode (auto, on, off):
+//SET floodlight mode (auto, on, off):
 $floodlight = $_Presence->setFloodlight("myCamera", "auto");
 echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
 
@@ -90,12 +91,9 @@ echo "<pre>monitoring:<br>".json_encode($monitoring, JSON_PRETTY_PRINT)."</pre><
 //0: ignore, 1: record, 2: record and notify
 $alert = $_Presence->setHumanAlert(1);
 echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
-
-//SET alert level for animal detection:
+//and:
 $alert = $_Presence->setAnimalAlert(1);
-//SET alert level for vehicle detection:
 $alert = $_Presence->setVehicleAlert(1);
-//SET alert level for other movement detection:
 $alert = $_Presence->setOtherAlert(1);
 
 //SET alert time from 10h15 (always use hh:mm)
@@ -103,7 +101,7 @@ $alert = $_Presence->setAlertFrom('10:15');
 echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
 
 //SET alert time to 22h00
-$alert = $_Presence->setAlertFrom('22:00');
+$alert = $_Presence->setAlertTo('22:00');
 ```
 
 ## Changes
