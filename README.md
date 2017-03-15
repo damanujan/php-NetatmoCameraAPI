@@ -6,8 +6,7 @@
 This API allow you to fully control Netatmo Presence cameras settings, monitoring, floodlight (mode, intensity, records), and alerts settings.
 
 - No need for official Netatmo SDK or any other ressources!
-- No need for Netatmo connect application
-- You need only your Netatmo account login and password.
+- No need for Netatmo connect application.
 
 The following operations are currently supported:
 
@@ -17,6 +16,8 @@ The following operations are currently supported:
 - Get events (filtered by type or not).
 - Get camera(s) status.
 - Get SmartZones (we could set them but dunno if useful...).
+
+As it doesn't realy on official Netatmo API (which doesn't provide editing camera settings), it can't set/drop webhooks.
 
 **This isn't an official API | USE AT YOUR OWN RISK!**
 
@@ -36,7 +37,7 @@ To avoid this:
 
 - Download the class/NetatmoPresenceAPI.php on your server.
 - Include it in your script.
-- Start it with your login and password.
+- Start it with your Netatmo account login and password.
 
 ```php
 require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoPresenceAPI.php");
