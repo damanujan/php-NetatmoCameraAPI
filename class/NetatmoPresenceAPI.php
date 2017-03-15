@@ -32,7 +32,7 @@ class NetatmoPresenceAPI {
 		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
 
 		$setting = 'presence_settings[presence_record_humans]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -49,7 +49,7 @@ class NetatmoPresenceAPI {
 		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
 
 		$setting = 'presence_settings[presence_record_animals]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -66,7 +66,7 @@ class NetatmoPresenceAPI {
 		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
 
 		$setting = 'presence_settings[presence_record_vehicles]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -83,7 +83,7 @@ class NetatmoPresenceAPI {
 		if (!isset($mode)) return array('error'=>'Set 0 for ignore, 1 for record, 2 for record and notify');
 
 		$setting = 'presence_settings[presence_record_movements]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -106,7 +106,7 @@ class NetatmoPresenceAPI {
 		}
 
 		$setting = 'presence_settings[presence_notify_from]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -129,7 +129,7 @@ class NetatmoPresenceAPI {
 		}
 
 		$setting = 'presence_settings[presence_notify_to]';
-		$url = 'https://my.netatmo.com/api/updatehome';
+		$url = $this->_urlHost.'/api/updatehome';
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
@@ -323,7 +323,7 @@ class NetatmoPresenceAPI {
 	public function getDatas($eventNum=10)
 	{
 		//get homedata
-		$url = 'https://my.netatmo.com/api/gethomedata'."&size=".$eventNum;
+		$url = $this->_urlHost.'/api/gethomedata'."&size=".$eventNum;
 		$answer = $this->_request('POST', $url);
 
 		$jsonDatas = json_decode($answer, true);
@@ -437,7 +437,7 @@ class NetatmoPresenceAPI {
 	protected function connect()
 	{
 		//get csrf:
-		$url = "https://my.netatmo.com/";
+		$url = $this->_urlHost;
 		$answer = $this->_request('GET', $url);
 
 		$csrf = explode('netatmocomci_csrf_cookie_na=', $answer);
@@ -454,7 +454,7 @@ class NetatmoPresenceAPI {
 		}
 
 		//get token:
-		$url = 'https://auth.netatmo.com/fr-FR/access/login';
+		$url = $this->_urlAuth.'/en-US/access/login';
 		$post = "ci_csrf_netatmo=".$csrf."&mail=".$this->_Netatmo_user."&pass=".$this->_Netatmo_pass."&log_submit=Connexion";
 		$answer = $this->_request('POST', $url, $post);
 
@@ -493,6 +493,9 @@ class NetatmoPresenceAPI {
 	public $_homeID = null;
 	public $_fullDatas;
 	public $_cameras;
+
+	protected $_urlHost = 'https://my.netatmo.com';
+	protected $_urlAuth = 'https://auth.netatmo.com';
 
 	protected $_Netatmo_user;
 	protected $_Netatmo_pass;
