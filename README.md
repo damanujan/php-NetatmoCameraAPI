@@ -12,13 +12,13 @@ The following operations are currently supported:
 
 - Get and Set alerts (ignore, record, record and notify) for humans, vehicle, animal, other.
 - Get and Set alerts hours.
-- Get and Set recording or not for each events
-- Set floodlight intensity, mode (auto, on, off)
+- Get and Set recording or not for each events.
+- Set floodlight intensity, mode (auto, on, off).
 - Get events (filtered by type or not).
 - Get camera(s) status.
-- Get SmartZones (we could set them but dunno if useful...).
+- Get and Set SmartZones.
 
-As it doesn't realy on official Netatmo API (which doesn't provide editing camera settings), it can't set/drop webhooks.
+As it doesn't rely on official Netatmo API (which doesn't provide editing camera settings), it can't set/drop webhooks.
 
 **This isn't an official API | USE AT YOUR OWN RISK!**
 
@@ -106,12 +106,27 @@ echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
 
 //SET alert time to 22h00
 $alert = $_Presence->setAlertTo('22:00');
+
+/*SET SmartZones:
+- Define zones as array(x, y, width, height)
+- Send at least one zone
+- The API check for overlapping zones and don't send them to camera if so.
+*/
+$zone1 = array(0, 140, 455, 938);
+$zone2 = array(457, 99, 880, 979);
+$zone3 = array(1339, 569, 545, 509);
+$zone4 = array(1339, 158, 580, 409);
+$smartZones = $_Presence->setSmartZones("myCamera", $zone1, $zone2, $zone3, $zone4);
+echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 ```
 ## IFTTT
 
 You can create an endpoint url for triggering changes from IFTTT. See IFTTTactions.php
 
 ## Changes
+
+#### v0.2 (2017-03-16)
+- New setSmartZones
 
 #### v0.1 (2017-03-15)
 - First public version.
