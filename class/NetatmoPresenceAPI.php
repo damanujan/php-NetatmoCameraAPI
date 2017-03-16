@@ -3,12 +3,11 @@
 
 https://github.com/KiboOst/php-NetatmoPresenceAPI
 
-
 */
 
 class NetatmoPresenceAPI {
 
-	public $_version = "0.1";
+	public $_version = "0.2";
 
 	function __construct($Netatmo_user, $Netatmo_pass)
 	{
@@ -175,6 +174,61 @@ class NetatmoPresenceAPI {
 		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
 
 		$answer = $this->_request('POST', $url, $post);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function setSmartZones($camera, $zone1=null, $zone2=null, $zone3=null, $zone4=null) //zone as array(x, y, width, height)
+	{
+		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+		if ( isset($camera['error']) ) return $camera;
+
+		$zones = func_get_args();
+		array_shift($zones); //remove $camera
+
+		//Netatmo server won't check overlapping zones, so do it before setting them:
+		for ($i=0; $i<=count($zones)-1; $i++)
+		{
+			$z1x = $zones[$i][0];
+			$z1x2 = $z1x + $zones[$i][2];
+			$z1y = $zones[$i][1];
+			$z1y2 = $z1y + $zones[$i][3];
+
+			for ($j=0; $j<=count($zones)-1; $j++)
+			{
+				if ($j == $i) continue;
+				$z2x = $zones[$j][0];
+				$z2x2 = $z2x + $zones[$j][2];
+				$z2y = $zones[$j][1];
+				$z2y2 = $z2y + $zones[$j][3];
+
+				//so ??
+				if ( ($z1x < $z2x2) and ($z1x2 > $z2x) and ($z1y < $z2y2) and ($z1y2 > $z2y) )
+				{
+					$j++;
+					$i++;
+					return array('result'=>null, 'error'=>"Can't set overlapping zones (zone".$j."|zone".$i."). Well, I can, but this won't work!");
+				}
+			}
+		}
+
+		return array('result'=>null);
+
+		$config = '{"version":0,"max_number_of_zones":4,"zones_count":'.count($zones).',"ref_size":[1920,1080],"zones":[';
+		foreach($zones as $zone)
+		{
+			$conf = '{"x":'.$zone[0].',"y":'.$zone[1].',"width":'.$zone[2].',"height":'.$zone[3].'}';
+			$config .= $conf.',';
+
+		}
+		$config = rtrim($config,","); //remove last ','
+		$config  .= ']}';
+
+		$vpn = $camera['vpn'];
+		$command = '/command/smart_zone_set_config?config=';
+		$url = $vpn.$command.urlencode($config);
+
+		$answer = $this->_request('POST', $url);
 		$answer = json_decode($answer, true);
 		return array('result'=>$answer);
 	}
@@ -469,6 +523,22 @@ class NetatmoPresenceAPI {
 		{
 			die("Couldn't find Netatmo token.");
 		}
+
+		/*
+		//get netatmocommail_cookie to avoid having email connection each time!!
+		$commail = explode('netatmocommail_cookie=', $answer);
+		if(count($commail)>1)
+		{
+			$commail = explode('; ', $commail[1]);
+			$commail = $commail[0];
+			$this->_commail = $commail;
+			echo "commail:".$commail."<br>";
+		}
+		else
+		{
+			die("Couldn't find Netatmo email reference.");
+		}
+		*/
 	}
 
 	public $_home = null;
