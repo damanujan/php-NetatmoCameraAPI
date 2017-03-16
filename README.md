@@ -12,7 +12,8 @@ The following operations are currently supported:
 
 - Get and Set alerts (ignore, record, record and notify) for humans, vehicle, animal, other.
 - Get and Set alerts hours.
-- Get and Set record or not for each events
+- Get and Set recording or not for each events
+- Set floodlight intensity, mode (auto, on, off)
 - Get events (filtered by type or not).
 - Get camera(s) status.
 - Get SmartZones (we could set them but dunno if useful...).
@@ -79,6 +80,9 @@ Here are function to CHANGE your camera settings:
 $alerts = $_Presence->setRecording("myCamera", false, true, false, false, true);
 echo "<pre>alerts:<br>".json_encode($alerts, JSON_PRETTY_PRINT)."</pre><br>";
 
+//SET floodlight intensity:
+$_Presence->setIntensity("myCamera", 100);
+
 //SET floodlight mode (auto, on, off):
 $floodlight = $_Presence->setFloodlight("myCamera", "auto");
 echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
@@ -103,6 +107,9 @@ echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
 //SET alert time to 22h00
 $alert = $_Presence->setAlertTo('22:00');
 ```
+## IFTTT
+
+You can create an endpoint url for triggering changes from IFTTT. See IFTTTactions.php
 
 ## Changes
 
