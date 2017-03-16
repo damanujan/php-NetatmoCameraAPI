@@ -21,8 +21,50 @@ class NetatmoPresenceAPI {
 
 	//user functions======================================================
 	//GET:
+	public function getSettings($camera)
+	{
+		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+		if ( isset($camera['error']) ) return $camera;
 
-	//for alerts: 0: ignore, 1: record, 2: record and notify
+		$vpn = $camera['vpn'];
+		$command = '/command/getsetting';
+		$url = $vpn.$command;
+
+		$answer = $this->_request('GET', $url);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function getSmartZones($camera)
+	{
+		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+		if ( isset($camera['error']) ) return $camera;
+
+		$vpn = $camera['vpn'];
+		$command = '/command/smart_zone_get_config';
+		$url = $vpn.$command;
+
+		$answer = $this->_request('GET', $url);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	public function getFloodlight($camera)
+	{
+		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+		if ( isset($camera['error']) ) return $camera;
+
+		$vpn = $camera['vpn'];
+		$command = '/command/floodlight_get_config';
+		$url = $vpn.$command;
+
+		$answer = $this->_request('GET', $url);
+		$answer = json_decode($answer, true);
+		return array('result'=>$answer);
+	}
+
+	//SET:
+		//for alerts: 0: ignore, 1: record, 2: record and notify
 	public function setHumanAlert($value)
 	{
 		$mode = null;
@@ -137,50 +179,6 @@ class NetatmoPresenceAPI {
 		return array('result'=>$answer);
 	}
 
-
-	public function getSettings($camera)
-	{
-		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
-		if ( isset($camera['error']) ) return $camera;
-
-		$vpn = $camera['vpn'];
-		$command = '/command/getsetting';
-		$url = $vpn.$command;
-
-		$answer = $this->_request('GET', $url);
-		$answer = json_decode($answer, true);
-		return array('result'=>$answer);
-	}
-
-	public function getSmartZones($camera)
-	{
-		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
-		if ( isset($camera['error']) ) return $camera;
-
-		$vpn = $camera['vpn'];
-		$command = '/command/smart_zone_get_config';
-		$url = $vpn.$command;
-
-		$answer = $this->_request('GET', $url);
-		$answer = json_decode($answer, true);
-		return array('result'=>$answer);
-	}
-
-	public function getFloodlight($camera)
-	{
-		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
-		if ( isset($camera['error']) ) return $camera;
-
-		$vpn = $camera['vpn'];
-		$command = '/command/floodlight_get_config';
-		$url = $vpn.$command;
-
-		$answer = $this->_request('GET', $url);
-		$answer = json_decode($answer, true);
-		return array('result'=>$answer);
-	}
-
-	//SET:
 	public function setIntensity($camera, $intensity)
 	{
 		if ( is_string($camera) ) $camera = $this->getCamByName($camera);
@@ -471,22 +469,6 @@ class NetatmoPresenceAPI {
 		{
 			die("Couldn't find Netatmo token.");
 		}
-
-		/*
-		//get netatmocommail_cookie to avoid having email connection each time!!
-		$commail = explode('netatmocommail_cookie=', $answer);
-		if(count($commail)>1)
-		{
-			$commail = explode('; ', $commail[1]);
-			$commail = $commail[0];
-			$this->_commail = $commail;
-			echo "commail:".$commail."<br>";
-		}
-		else
-		{
-			die("Couldn't find Netatmo email reference.");
-		}
-		*/
 	}
 
 	public $_home = null;
