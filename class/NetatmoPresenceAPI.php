@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-	public $_version = "0.2";
+	public $_version = "0.21";
 
 	function __construct($Netatmo_user, $Netatmo_pass)
 	{
@@ -403,6 +403,7 @@ class NetatmoPresenceAPI {
 
 			$camera = array('name' => $thisCamera["name"],
 							'id' => $thisCamera["id"],
+							'firmware' => $thisCamera["firmware"],
 							'vpn' => $cameraVPN,
 							'snapshot' => $cameraVPN.'/live/snapshot_720.jpg',
 							'live' => $cameraLive,
@@ -523,22 +524,6 @@ class NetatmoPresenceAPI {
 		{
 			die("Couldn't find Netatmo token.");
 		}
-
-		/*
-		//get netatmocommail_cookie to avoid having email connection each time!!
-		$commail = explode('netatmocommail_cookie=', $answer);
-		if(count($commail)>1)
-		{
-			$commail = explode('; ', $commail[1]);
-			$commail = $commail[0];
-			$this->_commail = $commail;
-			echo "commail:".$commail."<br>";
-		}
-		else
-		{
-			die("Couldn't find Netatmo email reference.");
-		}
-		*/
 	}
 
 	public $_home = null;
