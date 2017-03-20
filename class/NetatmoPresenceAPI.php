@@ -9,15 +9,6 @@ class NetatmoPresenceAPI {
 
 	public $_version = "0.22";
 
-	function __construct($Netatmo_user, $Netatmo_pass)
-	{
-		$this->_Netatmo_user = $Netatmo_user;
-		$this->_Netatmo_pass = $Netatmo_pass;
-		$this->connect();
-		$this->getDatas();
-		$this->getCameras();
-	}
-
 	//user functions======================================================
 	//GET:
 	public function getSettings($camera)
@@ -487,6 +478,18 @@ class NetatmoPresenceAPI {
 	}
 
 	//functions authorization=============================================
+	function __construct($Netatmo_user, $Netatmo_pass)
+	{
+		$this->_Netatmo_user = $Netatmo_user;
+		$this->_Netatmo_pass = $Netatmo_pass;
+
+		if ($this->connect() == true)
+		{
+			$this->getDatas();
+			$this->getCameras();
+		}
+	}
+
 	protected function connect()
 	{
 		//get csrf:
@@ -497,7 +500,7 @@ class NetatmoPresenceAPI {
 		$csrf = explode('netatmocomci_csrf_cookie_na=', $answer);
 		if(count($csrf)>1)
 		{
-			$csrf = explode('; ', $csrf[1]);
+			$csrf = explode(';', $csrf[1]);
 			$csrf = $csrf[0];
 			$this->_csrf = $csrf;
 		}
@@ -516,7 +519,7 @@ class NetatmoPresenceAPI {
 		if(count($token)>1)
 		{
 			$token = $token[count($token)-1];
-			$token = explode('; ', $token)[0];
+			$token = explode(';', $token)[0];
 			$token = urldecode($token);
 			$this->_token = $token;
 		}
@@ -525,6 +528,7 @@ class NetatmoPresenceAPI {
 			$this->error = "Couldn't find Netatmo token.";
 			return false;
 		}
+		return true;
 	}
 
 	public $_home = null;
