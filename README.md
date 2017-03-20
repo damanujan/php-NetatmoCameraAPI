@@ -43,6 +43,7 @@ To avoid this:
 ```php
 require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoPresenceAPI.php");
 $_Presence = new NetatmoPresenceAPI($Netatmo_user, $Netatmo_pass);
+if (isset($_Presence->error)) die($_Presence->error);
 ```
 
 Here are functions to get actual settings:
