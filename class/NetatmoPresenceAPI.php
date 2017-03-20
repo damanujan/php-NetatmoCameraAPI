@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-	public $_version = "0.21";
+	public $_version = "0.22";
 
 	function __construct($Netatmo_user, $Netatmo_pass)
 	{
@@ -437,6 +437,7 @@ class NetatmoPresenceAPI {
 			curl_setopt($this->_curlHdl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->_curlHdl, CURLOPT_HEADER, true);
 			curl_setopt($this->_curlHdl, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($this->_curlHdl, CURLOPT_REFERER, 'http://www.google.com/');
 			curl_setopt($this->_curlHdl, CURLOPT_USERAGENT, 'User-Agent: Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:51.0) Gecko/20100101 Firefox/51.0');
 			curl_setopt($this->_curlHdl, CURLOPT_ENCODING , '');
 		}
@@ -465,7 +466,6 @@ class NetatmoPresenceAPI {
 		$cookie = "";
 		if (isset($this->_csrf)) $cookie = 'netatmocomci_csrf_cookie_na='.$this->_csrf;
 		if (isset($this->_token)) $cookie .= '; netatmocomaccess_token='.$this->_token;
-
 		if ( $cookie != "" )
 		{
 			curl_setopt($this->_curlHdl, CURLOPT_COOKIE, $cookie);
@@ -493,17 +493,18 @@ class NetatmoPresenceAPI {
 		$url = $this->_urlHost;
 		$answer = $this->_request('GET', $url);
 
+		//csrf in Set cookie header:
 		$csrf = explode('netatmocomci_csrf_cookie_na=', $answer);
 		if(count($csrf)>1)
 		{
 			$csrf = explode('; ', $csrf[1]);
 			$csrf = $csrf[0];
 			$this->_csrf = $csrf;
-			//echo "csrf:".$csrf."<br>";
 		}
 		else
 		{
-			die("Couldn't find Netatmo CSRF.");
+			$this->error = "Couldn't find Netatmo CSRF.";
+			return false;
 		}
 
 		//get token:
@@ -518,11 +519,11 @@ class NetatmoPresenceAPI {
 			$token = explode('; ', $token)[0];
 			$token = urldecode($token);
 			$this->_token = $token;
-			//echo "token:".$token."<br>";
 		}
 		else
 		{
-			die("Couldn't find Netatmo token.");
+			$this->error = "Couldn't find Netatmo token.";
+			return false;
 		}
 	}
 
@@ -530,6 +531,8 @@ class NetatmoPresenceAPI {
 	public $_homeID = null;
 	public $_fullDatas;
 	public $_cameras;
+
+	public $error = null;
 
 	protected $_urlHost = 'https://my.netatmo.com';
 	protected $_urlAuth = 'https://auth.netatmo.com';
