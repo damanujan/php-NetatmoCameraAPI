@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-	public $_version = "0.22";
+	public $_version = "0.23";
 
 	//user functions======================================================
 	//GET:
@@ -54,7 +54,7 @@ class NetatmoPresenceAPI {
 	}
 
 	//SET:
-		//for alerts: 0: ignore, 1: record, 2: record and notify
+	//for alerts: 0: ignore, 1: record, 2: record and notify
 	public function setHumanAlert($value)
 	{
 		$mode = null;
@@ -65,7 +65,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_record_humans]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -82,7 +82,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_record_animals]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -99,7 +99,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_record_vehicles]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -116,7 +116,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_record_movements]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$mode;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -139,7 +139,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_notify_from]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -162,7 +162,7 @@ class NetatmoPresenceAPI {
 
 		$setting = 'presence_settings[presence_notify_to]';
 		$url = $this->_urlHost.'/api/updatehome';
-		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString.'&ci_csrf_netatmo='.$this->_csrf;
+		$post = 'home_id='.$this->_homeID.'&'.$setting.'='.$timeString;
 
 		$answer = $this->_request('POST', $url, $post);
 		$answer = json_decode($answer, true);
@@ -382,29 +382,33 @@ class NetatmoPresenceAPI {
 		$allCameras = array();
 		foreach ($this->_fullDatas['body']['homes'][0]['cameras'] as $thisCamera)
 		{
-			$cameraVPN = $thisCamera["vpn_url"];
-			if ($thisCamera['is_local'] == false)
+			if( $thisCamera['type'] == 'NOC' ) //Presence
 			{
-				$cameraLive = $cameraVPN."/live/index.m3u8";
-			}
-			else
-			{
-				$cameraLive = $cameraVPN."/live/index_local.m3u8";
-			}
+				$cameraVPN = $thisCamera["vpn_url"];
+				if ($thisCamera['is_local'] == false)
+				{
+					$cameraLive = $cameraVPN."/live/index.m3u8";
+				}
+				else
+				{
+					$cameraLive = $cameraVPN."/live/index_local.m3u8";
+				}
 
-			$camera = array('name' => $thisCamera["name"],
-							'id' => $thisCamera["id"],
-							'firmware' => $thisCamera["firmware"],
-							'vpn' => $cameraVPN,
-							'snapshot' => $cameraVPN.'/live/snapshot_720.jpg',
-							'live' => $cameraLive,
-							'status' => $thisCamera["status"],
-							'sd_status' => $thisCamera["sd_status"],
-							'alim_status' => $thisCamera["alim_status"],
-							'light_mode_status' => $thisCamera["light_mode_status"],
-							'is_local' => $thisCamera["is_local"]
-							);
-			array_push($allCameras, $camera);
+				$camera = array('name' => $thisCamera["name"],
+								'id' => $thisCamera["id"],
+								'firmware' => $thisCamera["firmware"],
+								'vpn' => $cameraVPN,
+								'snapshot' => $cameraVPN.'/live/snapshot_720.jpg',
+								'live' => $cameraLive,
+								'status' => $thisCamera["status"],
+								'sd_status' => $thisCamera["sd_status"],
+								'alim_status' => $thisCamera["alim_status"],
+								'light_mode_status' => $thisCamera["light_mode_status"],
+								'is_local' => $thisCamera["is_local"],
+								'type' => 'Presence'
+								);
+				array_push($allCameras, $camera);
+			}
 		}
 		$this->_cameras = $allCameras;
 		return $allCameras;
@@ -425,6 +429,9 @@ class NetatmoPresenceAPI {
 		if (!isset($this->_curlHdl))
 		{
 			$this->_curlHdl = curl_init();
+			curl_setopt($this->_curlHdl, CURLOPT_COOKIEJAR, '');
+			curl_setopt($this->_curlHdl, CURLOPT_COOKIEFILE, '');
+
 			curl_setopt($this->_curlHdl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->_curlHdl, CURLOPT_HEADER, true);
 			curl_setopt($this->_curlHdl, CURLOPT_SSL_VERIFYPEER, false);
@@ -434,32 +441,30 @@ class NetatmoPresenceAPI {
 		}
 
 		curl_setopt($this->_curlHdl, CURLOPT_URL, $url);
-		curl_setopt($this->_curlHdl, CURLOPT_POST, false);
 
 		if ($method == 'POST')
 		{
 			curl_setopt($this->_curlHdl, CURLOPT_POST, true);
+
+			//add csrf to post data:
+			if ( isset($post)) $post .= '&'.$this->_csrfName.'='.$this->_csrf;
 			curl_setopt($this->_curlHdl, CURLOPT_POSTFIELDS, $post);
 
+			//should have token after login:
 			if (isset($this->_token))
 			{
 				curl_setopt($this->_curlHdl, CURLOPT_HEADER, false);
 				curl_setopt($this->_curlHdl, CURLOPT_HTTPHEADER, array(
 														'Connection: keep-alive',
 														'Content-Type: application/x-www-form-urlencoded',
-														'Authorization: Bearer '.$this->_token,
+														'Authorization: Bearer '.$this->_token
 														)
 													);
 			}
-
 		}
-
-		$cookie = "";
-		if (isset($this->_csrf)) $cookie = 'netatmocomci_csrf_cookie_na='.$this->_csrf;
-		if (isset($this->_token)) $cookie .= '; netatmocomaccess_token='.$this->_token;
-		if ( $cookie != "" )
+		else
 		{
-			curl_setopt($this->_curlHdl, CURLOPT_COOKIE, $cookie);
+			curl_setopt($this->_curlHdl, CURLOPT_HTTPGET, true);
 		}
 
 		$response = curl_exec($this->_curlHdl);
@@ -490,19 +495,40 @@ class NetatmoPresenceAPI {
 		}
 	}
 
+	protected function getCSRF($answerString)
+	{
+		preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $answerString, $matches);
+		$cookies = array();
+		foreach($matches[1] as $item)
+		{
+			parse_str($item, $cookie);
+			$cookies = array_merge($cookies, $cookie);
+		}
+		$cookie = null;
+		$cookiename = null;
+		foreach ($cookies as $name => $value)
+		{
+			if (strpos($name, 'csrf') !== false)
+			{
+				$cookiename = str_replace('netatmocom', '', $name);
+				$cookiename = str_replace('_cookie_na', '_netatmo', $cookiename);
+				return array($cookiename, $value);
+			}
+		}
+		return false;
+	}
+
 	protected function connect()
 	{
-		//get csrf:
+		//get csrf, required for login and all post requests:
 		$url = $this->_urlHost;
 		$answer = $this->_request('GET', $url);
 
-		//csrf in Set cookie header:
-		$csrf = explode('netatmocomci_csrf_cookie_na=', $answer);
-		if(count($csrf)>1)
+		$var = $this->getCSRF($answer);
+		if ($var != false)
 		{
-			$csrf = explode(';', $csrf[1]);
-			$csrf = $csrf[0];
-			$this->_csrf = $csrf;
+			$this->_csrfName = $var[0];
+			$this->_csrf = $var[1];
 		}
 		else
 		{
@@ -510,9 +536,9 @@ class NetatmoPresenceAPI {
 			return false;
 		}
 
-		//get token:
+		//get token, required for all post requests as bearer auth:
 		$url = $this->_urlAuth.'/en-US/access/login';
-		$post = "ci_csrf_netatmo=".$csrf."&mail=".$this->_Netatmo_user."&pass=".$this->_Netatmo_pass."&log_submit=Connexion";
+		$post = "mail=".$this->_Netatmo_user."&pass=".$this->_Netatmo_pass."&log_submit=Connexion";
 		$answer = $this->_request('POST', $url, $post);
 
 		$token = explode('netatmocomaccess_token=', $answer);
@@ -533,10 +559,9 @@ class NetatmoPresenceAPI {
 
 	public $_home = null;
 	public $_homeID = null;
+	public $error = null;
 	public $_fullDatas;
 	public $_cameras;
-
-	public $error = null;
 
 	protected $_urlHost = 'https://my.netatmo.com';
 	protected $_urlAuth = 'https://auth.netatmo.com';
@@ -544,7 +569,7 @@ class NetatmoPresenceAPI {
 	protected $_Netatmo_user;
 	protected $_Netatmo_pass;
 	protected $_csrf = null;
-	protected $_commail = null;
+	protected $_csrfName = null;
 	protected $_token = null;
 	protected $_curlHdl = null;
 
