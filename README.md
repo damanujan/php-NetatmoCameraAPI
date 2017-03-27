@@ -34,7 +34,7 @@ To avoid this:
 - Go to e-mail settings
 - Turn off e-mail on new connection
 
-*This API is reverse-engineered, it can break anytime. But we will fix asap!*
+*This API is reverse-engineered, provided for research and development for interoperability.*
 
 ## How-to
 
