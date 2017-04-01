@@ -23,6 +23,8 @@ As it doesn't rely on official Netatmo API (which doesn't provide editing camera
 
 **This isn't an official API | USE AT YOUR OWN RISK!**
 
+*This API is reverse-engineered, provided for research and development for interoperability.*
+
 Feel free to submit an issue or pull request to add more.
 
 <img align="right" src="/readmeAssets/requirements.jpg" width="48">
@@ -33,11 +35,16 @@ This API will connect directly to your Netatmo account, like you do with a web b
 
 To avoid this:
 
-- On the web interface, go to user settings (top right)
-- Go to e-mail settings
-- Turn off e-mail on new connection
+- On the web interface, go to user settings (top right).
+- Go to e-mail settings.
+- Turn off e-mail on new connection.
 
-*This API is reverse-engineered, provided for research and development for interoperability.*
+Or:
+
+- Create a new account on netatmo website.
+- Disable connection notification for this new account.
+- From your original account, invite the new account.
+- Use this second account for the API!
 
 <img align="right" src="/readmeAssets/howto.jpg" width="48">
 
