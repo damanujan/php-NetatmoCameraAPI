@@ -1,7 +1,8 @@
+<img align="right" src="/readmeAssets/PresenceAPI.jpg" width="150">
+
 # php Netatmo Presence API
 
 ## This API allow full control of your Netatmo Presence cameras
-(C) 2017, KiboOst
 
 This API allow you to fully control Netatmo Presence cameras settings, monitoring, floodlight (mode, intensity, records), and alerts settings.
 
@@ -24,6 +25,8 @@ As it doesn't rely on official Netatmo API (which doesn't provide editing camera
 
 Feel free to submit an issue or pull request to add more.
 
+<img align="right" src="/readmeAssets/requirements.jpg" width="48">
+
 ## Warning
 
 This API will connect directly to your Netatmo account, like you do with a web browser. Regarding your account option, each connection (script execution) may send you an email alert telling that someone connected to your account!
@@ -36,11 +39,15 @@ To avoid this:
 
 *This API is reverse-engineered, provided for research and development for interoperability.*
 
+<img align="right" src="/readmeAssets/howto.jpg" width="48">
+
 ## How-to
 
 - Download the class/NetatmoPresenceAPI.php on your server.
 - Include it in your script.
 - Start it with your Netatmo account login and password.
+
+#### Connection
 
 ```php
 require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoPresenceAPI.php");
@@ -48,7 +55,9 @@ $_Presence = new NetatmoPresenceAPI($Netatmo_user, $Netatmo_pass);
 if (isset($_Presence->error)) die($_Presence->error);
 ```
 
-Here are functions to get actual settings:
+<img align="right" src="/readmeAssets/read.jpg" width="48">
+
+#### Get settings:
 *Change camera name by yours!*
 
 ```php
@@ -74,7 +83,9 @@ $smartZones = $_Presence->getSmartZones("myCamera");
 echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 ```
 
-Here are function to CHANGE your camera settings:
+<img align="right" src="/readmeAssets/set.jpg" width="48">
+
+#### Change your camera settings:
 *Change camera name by yours!*
 
 ```php
@@ -122,9 +133,14 @@ $zone4 = array(1339, 158, 580, 409);
 $smartZones = $_Presence->setSmartZones("myCamera", $zone1, $zone2, $zone3, $zone4);
 echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 ```
+
+<img align="right" src="/readmeAssets/IF.jpg" width="48">
+
 ## IFTTT
 
 You can create an endpoint url for triggering changes from IFTTT. See IFTTTactions.php
+
+<img align="right" src="/readmeAssets/changes.jpg" width="48">
 
 ## Changes
 
@@ -133,6 +149,8 @@ You can create an endpoint url for triggering changes from IFTTT. See IFTTTactio
 
 #### v0.1 (2017-03-15)
 - First public version.
+
+<img align="right" src="/readmeAssets/mit.jpg" width="48">
 
 ## License
 
