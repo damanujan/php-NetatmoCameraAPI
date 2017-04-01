@@ -138,7 +138,11 @@ echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><
 
 ## IFTTT
 
-You can create an endpoint url for triggering changes from IFTTT. See IFTTTactions.php
+You can create an endpoint url for triggering changes from IFTTT.
+
+Basically, you create a php script that will get url parameters and trigger actions regarding these parameters. So in IFTTT, you can trigger same script with different parameters.
+
+See IFTTTactions.php as an example.
 
 <img align="right" src="/readmeAssets/changes.jpg" width="48">
 
