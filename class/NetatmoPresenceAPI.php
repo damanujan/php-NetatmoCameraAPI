@@ -430,7 +430,7 @@ class NetatmoPresenceAPI {
                                 'is_local' => $thisCamera['is_local'],
                                 'type' => 'Presence'
                                 );
-                if ($getSettings==true) $camera = $this->getCameraSettings($camera);
+                if ($getSettings==true and $camera['type']=='Presence') $camera = $this->getCameraSettings($camera);
                 array_push($allCameras, $camera);
             }
         }
