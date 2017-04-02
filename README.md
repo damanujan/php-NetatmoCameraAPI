@@ -72,22 +72,24 @@ if (isset($_Presence->error)) die($_Presence->error);
 $cameras = $_Presence->getCameras();
 echo "<pre>cameras:<br>".json_encode($cameras, JSON_PRETTY_PRINT)."</pre><br>";
 
+//get home settings, with alert settings:
+$home = $_Presence->getHome();
+echo "<pre>home:<br>".json_encode($home, JSON_PRETTY_PRINT)."</pre><br>";
+
+//get camera / floodlight settings:
+$settings = $_Presence->getCamera("myCamera");
+echo "<pre>settings:<br>".json_encode($settings, JSON_PRETTY_PRINT)."</pre><br>";
+echo $camera['light_mode_status'].'<br>';
+echo $camera['light']['intensity'].'<br>';
+
+//get camera smart zones:
+$smartZones = $_Presence->getSmartZones("myCamera");
+echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
+
 //get last 10 events of all type.
 //You can request All, or only human, animal, vehicle, movement
 $answer = $_Presence->getEvents("All", $num=10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
-
-//get camera settings:
-$settings = $_Presence->getSettings("myCamera");
-echo "<pre>settings:<br>".json_encode($settings, JSON_PRETTY_PRINT)."</pre><br>";
-
-//get floodlight settings: will return intensity, mode, alerts
-$floodlight = $_Presence->getFloodlight("myCamera");
-echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
-
-//get smart zones settings:
-$smartZones = $_Presence->getSmartZones("myCamera");
-echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 ```
 
 <img align="right" src="/readmeAssets/set.jpg" width="48">
@@ -96,21 +98,21 @@ echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><
 *Change camera name by yours!*
 
 ```php
-//SET events recording (here, only for person and other movements):
-//in order: always, person, vehicle, animal, movement
-$alerts = $_Presence->setRecording("myCamera", false, true, false, false, true);
-echo "<pre>alerts:<br>".json_encode($alerts, JSON_PRETTY_PRINT)."</pre><br>";
-
-//SET floodlight intensity:
-$_Presence->setIntensity("myCamera", 100);
-
-//SET floodlight mode (auto, on, off):
-$floodlight = $_Presence->setFloodlight("myCamera", "auto");
-echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
-
 //SET monitoring on/off
 $monitoring = $_Presence->setMonitoring("myCamera", "on");
 echo "<pre>monitoring:<br>".json_encode($monitoring, JSON_PRETTY_PRINT)."</pre><br>";
+
+//SET floodlight mode (auto, on, off):
+$floodlight = $_Presence->setLightMode("myCamera", "auto");
+echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
+
+//SET floodlight intensity:
+$_Presence->setLightIntensity("myCamera", 100);
+
+//SET when floodlight should turn on in auto mode:
+//in order: always, person, vehicle, animal, movement
+$lightAutoMode= $_Presence->setLightAutoMode("myCamera", false, true, false, false, true);
+echo "<pre>lightAutoMode:<br>".json_encode($lightAutoMode, JSON_PRETTY_PRINT)."</pre><br>";
 
 //SET alert level for human detection:
 //0: ignore, 1: record, 2: record and notify
@@ -155,6 +157,13 @@ See IFTTTactions.php as an example.
 
 ## Changes
 
+#### v0.5 (2017-04-02)
+
+- Code breaking! Some functions names where confusing, read how-to!
+- New: getHome() return home alerts
+- New: getCamera('my camera') return camera and light settings
+- Changes setLightMode(), setLightIntensity(), setLightAutoMode()
+
 #### v0.2 (2017-03-16)
 - New setSmartZones
 
@@ -186,3 +195,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
