@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-    public $_version = "0.52";
+    public $_version = "0.53";
 
     //user functions======================================================
     //GET:
@@ -529,17 +529,17 @@ class NetatmoPresenceAPI {
     //functions authorization=============================================
     public $error = null;
     public $_home = null;
+    public $_csrf = null;
+    public $_csrfName = null;
+    public $_token = null;
+
     public $_cameras;
     public $_fullDatas;
 
-    protected $_urlHost = 'https://my.netatmo.com';
-    protected $_urlAuth = 'https://auth.netatmo.com';
-
     protected $_Netatmo_user;
     protected $_Netatmo_pass;
-    protected $_csrf = null;
-    protected $_csrfName = null;
-    protected $_token = null;
+    protected $_urlHost = 'https://my.netatmo.com';
+    protected $_urlAuth = 'https://auth.netatmo.com';
     protected $_curlHdl = null;
 
     protected function getCSRF($answerString)
@@ -611,8 +611,8 @@ class NetatmoPresenceAPI {
 
     function __construct($Netatmo_user, $Netatmo_pass)
     {
-        $this->_Netatmo_user = $Netatmo_user;
-        $this->_Netatmo_pass = $Netatmo_pass;
+        $this->_Netatmo_user = urlencode($Netatmo_user);
+        $this->_Netatmo_pass = urlencode($Netatmo_pass);
 
         if ($this->connect() == true)
         {
