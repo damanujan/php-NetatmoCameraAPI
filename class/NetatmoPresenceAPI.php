@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-    public $_version = "0.5";
+    public $_version = "0.51";
 
     //user functions======================================================
     //GET:
@@ -527,12 +527,10 @@ class NetatmoPresenceAPI {
     }
 
     //functions authorization=============================================
-    public $_home = null;
     public $error = null;
-
+    public $_home = null;
     public $_cameras;
     public $_fullDatas;
-
 
     protected $_urlHost = 'https://my.netatmo.com';
     protected $_urlAuth = 'https://auth.netatmo.com';
@@ -590,10 +588,17 @@ class NetatmoPresenceAPI {
         $post = "mail=".$this->_Netatmo_user."&pass=".$this->_Netatmo_pass."&log_submit=Connexion";
         $answer = $this->_request('POST', $url, $post);
 
-        $token = explode('netatmocomaccess_token=', $answer);
-        if(count($token)>1)
+        $var = explode('netatmocomaccess_token=', $answer);
+        if(count($var)>1)
         {
-            $token = $token[count($token)-1];
+            $token = $var[count($var)-1];
+            $token = explode(';', $token)[0];
+            $token = urldecode($token);
+            $this->_token = $token;
+        }
+        elseif (count($var)==1)
+        {
+            $token = $var[1];
             $token = explode(';', $token)[0];
             $token = urldecode($token);
             $this->_token = $token;
