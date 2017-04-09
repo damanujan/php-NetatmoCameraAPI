@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-    public $_version = "0.51";
+    public $_version = "0.52";
 
     //user functions======================================================
     //GET:
@@ -588,27 +588,25 @@ class NetatmoPresenceAPI {
         $post = "mail=".$this->_Netatmo_user."&pass=".$this->_Netatmo_pass."&log_submit=Connexion";
         $answer = $this->_request('POST', $url, $post);
 
-        $var = explode('netatmocomaccess_token=', $answer);
-        if(count($var)>1)
+        $cookies = explode('Set-Cookie: ', $answer);
+        foreach($cookies as $var)
         {
-            $token = $var[count($var)-1];
-            $token = explode(';', $token)[0];
-            $token = urldecode($token);
-            $this->_token = $token;
+            if(strpos($var, 'netatmocomaccess_token') === 0)
+            {
+                $cookieValue = explode(';', $var)[0];
+                $cookieValue = str_replace('netatmocomaccess_token=', '', $cookieValue);
+                $token = urldecode($cookieValue);
+                if($token != 'deleted')
+                {
+                    $this->_token = $token;
+                    return true;
+                }
+            }
+
         }
-        elseif (count($var)==1)
-        {
-            $token = $var[1];
-            $token = explode(';', $token)[0];
-            $token = urldecode($token);
-            $this->_token = $token;
-        }
-        else
-        {
-            $this->error = "Couldn't find Netatmo token.";
-            return false;
-        }
-        return true;
+        //unfound valid token:
+        $this->error = "Couldn't find Netatmo token.";
+        return false;
     }
 
     function __construct($Netatmo_user, $Netatmo_pass)
