@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 class NetatmoPresenceAPI {
 
-    public $_version = "0.53";
+    public $_version = "0.54";
 
     //user functions======================================================
     //GET:
@@ -19,13 +19,13 @@ class NetatmoPresenceAPI {
 
     public function getCameras()
     {
-        if(!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
+        if (!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
         return $this->_cameras;
     }
 
     public function getCamera($camera)
     {
-        if(!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
+        if (!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
         foreach ($this->_cameras as $thisCamera)
         {
             if ($thisCamera['name'] == $camera) return $thisCamera;
@@ -191,7 +191,7 @@ class NetatmoPresenceAPI {
     public function setAlertFrom($from='00:00')
     {
         $var = explode(':', $from);
-        if(count($var)==2)
+        if (count($var)==2)
         {
             $h = $var[0];
             $m = $var[1];
@@ -214,7 +214,7 @@ class NetatmoPresenceAPI {
     public function setAlertTo($to='23:59')
     {
         $var = explode(':', $from);
-        if(count($var)==2)
+        if (count($var)==2)
         {
             $h = $var[0];
             $m = $var[1];
@@ -405,31 +405,34 @@ class NetatmoPresenceAPI {
         $allCameras = array();
         foreach ($this->_fullDatas['body']['homes'][0]['cameras'] as $thisCamera)
         {
-            if( $thisCamera['type'] == 'NOC' ) //Presence
+            if ($thisCamera['type'] == 'NOC') //Presence
             {
-                $cameraVPN = $thisCamera['vpn_url'];
-                if ($thisCamera['is_local'] == false)
+                $cameraVPN = (isset($thisCamera['vpn_url']) ? $thisCamera['vpn_url'] : null);
+                $isLocal = (isset($thisCamera['is_local']) ? $thisCamera['is_local'] : false);
+
+                $cameraSnapshot = null;
+                $cameraLive = null;
+
+                if ($cameraVPN != null)
                 {
-                    $cameraLive = $cameraVPN.'/live/index.m3u8';
-                }
-                else
-                {
-                    $cameraLive = $cameraVPN.'/live/index_local.m3u8';
+                    $cameraLive = ($isLocal == false ? $cameraVPN.'/live/index.m3u8' : $cameraVPN.'/live/index_local.m3u8');
+                    $cameraSnapshot = $cameraVPN.'/live/snapshot_720.jpg';
                 }
 
                 $camera = array('name' => $thisCamera['name'],
                                 'id' => $thisCamera['id'],
                                 'firmware' => $thisCamera['firmware'],
                                 'vpn' => $cameraVPN,
-                                'snapshot' => $cameraVPN.'/live/snapshot_720.jpg',
+                                'snapshot' => $cameraSnapshot,
                                 'live' => $cameraLive,
                                 'status' => $thisCamera['status'],
                                 'sd_status' => $thisCamera['sd_status'],
                                 'alim_status' => $thisCamera['alim_status'],
                                 'light_mode_status' => $thisCamera['light_mode_status'],
-                                'is_local' => $thisCamera['is_local'],
+                                'is_local' => $isLocal,
                                 'type' => 'Presence'
                                 );
+
                 if ($getSettings==true and $camera['type']=='Presence') $camera = $this->getCameraSettings($camera);
                 array_push($allCameras, $camera);
             }
@@ -444,26 +447,28 @@ class NetatmoPresenceAPI {
         if ( isset($camera['error']) ) return $camera;
 
         //get camera conf:
-        $vpn = $camera['vpn'];
-        $command = '/command/getsetting';
-        $url = $vpn.$command;
+        if ($camera['status'] == 'on')
+        {
+            $vpn = $camera['vpn'];
+            $command = '/command/getsetting';
+            $url = $vpn.$command;
 
-        $answer = $this->_request('GET', $url);
-        $answer = json_decode($answer, true);
+            $answer = $this->_request('GET', $url);
+            $answer = json_decode($answer, true);
 
-        $camera['error_status'] = $answer['error']['code'].' '.$answer['error']['message'];
-        $camera['image_orientation'] = $answer['conf']['image_orientation'];
-        $camera['audio'] = $answer['conf']['audio'];
+            $camera['error_status'] = $answer['error']['code'].' '.$answer['error']['message'];
+            $camera['image_orientation'] = $answer['conf']['image_orientation'];
+            $camera['audio'] = $answer['conf']['audio'];
 
-        //get camera light settings:
-        $command = '/command/floodlight_get_config';
-        $url = $vpn.$command;
+            //get camera light settings:
+            $command = '/command/floodlight_get_config';
+            $url = $vpn.$command;
 
-        $answer = $this->_request('GET', $url);
-        $answer = json_decode($answer, true);
+            $answer = $this->_request('GET', $url);
+            $answer = json_decode($answer, true);
 
-        $camera['light'] = $answer;
-
+            $camera['light'] = $answer;
+        }
         return $camera;
     }
 
@@ -473,6 +478,7 @@ class NetatmoPresenceAPI {
         if (!isset($this->_curlHdl))
         {
             $this->_curlHdl = curl_init();
+
             curl_setopt($this->_curlHdl, CURLOPT_COOKIEJAR, '');
             curl_setopt($this->_curlHdl, CURLOPT_COOKIEFILE, '');
 
@@ -516,7 +522,7 @@ class NetatmoPresenceAPI {
         //$info   = curl_getinfo($this->_curlHdl);
         //echo "<pre>cURL info".json_encode($info, JSON_PRETTY_PRINT)."</pre><br>";
 
-        if($response === false)
+        if ($response === false)
         {
             echo 'cURL error: ' . curl_error($this->_curlHdl);
         }
@@ -528,10 +534,10 @@ class NetatmoPresenceAPI {
 
     //functions authorization=============================================
     public $error = null;
-    public $_home = null;
     public $_csrf = null;
     public $_csrfName = null;
     public $_token = null;
+    public $_home = null;
 
     public $_cameras;
     public $_fullDatas;
@@ -591,12 +597,12 @@ class NetatmoPresenceAPI {
         $cookies = explode('Set-Cookie: ', $answer);
         foreach($cookies as $var)
         {
-            if(strpos($var, 'netatmocomaccess_token') === 0)
+            if (strpos($var, 'netatmocomaccess_token') === 0)
             {
                 $cookieValue = explode(';', $var)[0];
                 $cookieValue = str_replace('netatmocomaccess_token=', '', $cookieValue);
                 $token = urldecode($cookieValue);
-                if($token != 'deleted')
+                if ($token != 'deleted')
                 {
                     $this->_token = $token;
                     return true;
