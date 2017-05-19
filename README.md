@@ -18,13 +18,19 @@ This API allow you to fully control Netatmo Presence camera settings, monitoring
 - Get events (filtered by type or not).
 - Get camera(s) status.
 
+[Warning](#warning)<br />
+[How to](#how-to)<br />
+[Get settings](#get-settings)<br />
+[Change camera settings](#change-camera-settings)<br />
+[IFTTT](#ifttt)<br />
+[Version history](#version-history)<br />
 
-**This isn't an official API | USE AT YOUR OWN RISK!**
-
-*This API is reverse-engineered, provided for research and development for interoperability.*
+*This isn't an official API | USE AT YOUR OWN RISK!
+This API is reverse-engineered, provided for research and development for interoperability.*
 
 Feel free to submit an issue or pull request to add more.
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/requirements.jpg" width="48">
 
 ## Warning
@@ -44,6 +50,7 @@ Or:
 - From your original account, invite the new account.
 - Use this second account for the API!
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/howto.jpg" width="48">
 
 ## How-to
@@ -60,6 +67,7 @@ $_Presence = new NetatmoPresenceAPI($Netatmo_user, $Netatmo_pass);
 if (isset($_Presence->error)) die($_Presence->error);
 ```
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/read.jpg" width="48">
 
 #### Get settings:
@@ -90,9 +98,10 @@ $answer = $_Presence->getEvents("All", $num=10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
 ```
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/set.jpg" width="48">
 
-#### Change your camera settings:
+#### Change camera settings:
 *Change camera name by yours!*
 
 ```php
@@ -141,6 +150,7 @@ $smartZones = $_Presence->setSmartZones("myCamera", $zone1, $zone2, $zone3, $zon
 echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 ```
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/IF.jpg" width="48">
 
 ## IFTTT
@@ -151,9 +161,10 @@ Basically, you create a php script that will get url parameters and trigger acti
 
 See IFTTTactions.php as an example.
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/changes.jpg" width="48">
 
-## Changes
+## Version history
 
 #### v0.5 (2017-04-02)
 
@@ -168,6 +179,7 @@ See IFTTTactions.php as an example.
 #### v0.1 (2017-03-15)
 - First public version.
 
+[&#8657;](#php-netatmo-presence-api)
 <img align="right" src="/readmeAssets/mit.jpg" width="48">
 
 ## License
