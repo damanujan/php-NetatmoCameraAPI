@@ -5,38 +5,37 @@ https://github.com/KiboOst/php-NetatmoPresenceAPI
 
 */
 
-class NetatmoPresenceAPI {
+class NetatmoCameraAPI {
 
-    public $_version = "0.54";
+    public $_version = "1.0";
 
     //user functions======================================================
     //GET:
-    public function getHome()
+    public function getHome() //refresh home datas
     {
         $this->getDatas();
         return $this->_home;
     }
 
-    public function getCameras()
+    public function getCameraSettings($camera) //Presence - Welcome
     {
-        if (!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
-        return $this->_cameras;
-    }
-
-    public function getCamera($camera)
-    {
-        if (!isset($this->_cameras[0]['light'])) $this->getCamerasDatas(true);
         foreach ($this->_cameras as $thisCamera)
         {
-            if ($thisCamera['name'] == $camera) return $thisCamera;
+            if ($thisCamera['name'] == $camera) return $this->getCameraConfig($camera);
         }
         return array('result'=>null, 'error' => 'Unfound camera');
     }
 
-    public function getSmartZones($camera)
+    //Presence:
+    public function getSmartZones($camera) //Presence
     {
-        if ( is_string($camera) ) $camera = $this->getCamera($camera);
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for getSmartZones()');
+        }
 
         $vpn = $camera['vpn'];
         $command = '/command/smart_zone_get_config';
@@ -47,24 +46,21 @@ class NetatmoPresenceAPI {
         return $answer;
     }
 
-    public function getEvents($requestType="All", $num=1) //human, animal, vehicle, All
+    public function getOutdoorEvents($requestType="All", $num=1) //Presence
     {
+        //human, animal, vehicle, All
         //will return the last event of defined type as array of [title, snapshotURL, vignetteURL]
         if (is_null($this->_fullDatas)) $this->getDatas();
-        if (is_null($this->_cameras)) $this->getCameras();
+        if (is_null($this->_cameras)) $this->getCamerasDatas();
+        if($requestType="all") $requestType="All";
 
-        $cameraEvents = $this->_fullDatas['body']['homes'][0]['events'];
-        $numEvents = count($cameraEvents);
-        $counts = $num;
-        if ($numEvents < $counts) $counts == $numEvents;
-
+        $cameraEvents = $this->_outdoorEvents;
         $returnEvents = array();
-        for ($i=0; $i < $counts ;$i++)
+        for ($i=0; $i <= $num ;$i++)
         {
             //avoid iterating more than there is!
             if (isset($cameraEvents[$i])) $thisEvent = $cameraEvents[$i];
             else break;
-
 
             $id = $thisEvent['id'];
             $time = $thisEvent['time'];
@@ -84,6 +80,8 @@ class NetatmoPresenceAPI {
             $isAvailable = $thisEvent['video_status'];
             for ($j=0; $j < count($eventList) ;$j++)
             {
+                $eventType = 'MainEvent';
+                if ($j > 0) $eventType = 'SubEvent';
                 $thisSubEvent = $thisEvent['event_list'][$j];
                 $subType = $thisSubEvent['type'];
                 $subMsg = $thisSubEvent['message'];
@@ -108,6 +106,7 @@ class NetatmoPresenceAPI {
 
                         $returnThis = array();
                         $returnThis['title'] = $subMsg . ' | '.$subTime.' | '.$camName;
+                        $returnThis['type'] = $eventType;
                         $returnThis['snapshotURL'] = $snapshotURL;
                         $returnThis['vignetteURL'] = $vignetteURL;
                         array_push($returnEvents, $returnThis);
@@ -118,9 +117,138 @@ class NetatmoPresenceAPI {
         return $returnEvents;
     }
 
+    //Welcome:
+    public function getPerson($name) //Welcome
+    {
+        if ( is_string($name) ) $person = $this->getPersonByName($name);
+        return $person;
+    }
+
+    public function getPersonsAtHome() //Welcome
+    {
+        $atHome = array();
+        foreach ($this->_persons as $thisPerson)
+        {
+            if ($thisPerson['out_of_sight'] == false) array_push($atHome, $thisPerson);
+        }
+        return array('result'=>$atHome);
+    }
+
+    public function isHomeEmpty() //Welcome
+    {
+        $atHome = $this->getPersonsAtHome();
+        if (count($atHome)==0) return true;
+        return false;
+    }
+
+    public function getIndoorEvents($num=1) //Welcome
+    {
+        if (is_null($this->_fullDatas)) $this->getDatas();
+        if (is_null($this->_cameras)) $this->getCameras();
+
+        $cameraEvents = $this->_indoorEvents;
+        $returnEvents = array();
+        for ($i=0; $i <= $num ;$i++)
+        {
+            //avoid iterating more than there is!
+            if (isset($cameraEvents[$i])) $thisEvent = $cameraEvents[$i];
+            else break;
+
+            $id = $thisEvent['id'];
+            $type = $thisEvent['type'];
+            $time = $thisEvent['time'];
+            $time = date('d-m-Y H:i:s', $time);
+            $camId = $thisEvent['camera_id'];
+            $message = $thisEvent['message'];
+            foreach ($this->_cameras as $cam)
+                {
+                    if ($cam['id'] == $camId)
+                    {
+                        $camName = $cam['name'];
+                        $camVPN = $cam['vpn'];
+                        break;
+                    }
+                }
+
+            $returnThis = array();
+            $returnThis['title'] = $message . ' | '.$time.' | '.$camName;
+            $returnThis['type'] = $type;
+
+            if (isset($thisEvent['person_id'])) $returnThis['person_id'] = $thisEvent['person_id'];
+
+            if (isset($thisEvent['snapshot']))
+            {
+                $snapshot = $thisEvent['snapshot'];
+                $snapshotID = $snapshot['id'];
+                $snapshotKEY = $snapshot['key'];
+                $snapshotURL = 'https://api.netatmo.com/api/getcamerapicture?image_id='.$snapshotID.'&key='.$snapshotKEY;
+                $returnThis['snapshotURL'] = $snapshotURL;
+            }
+
+            if (isset($thisEvent['is_arrival'])) $returnThis['is_arrival'] = $thisEvent['is_arrival'];
+            array_push($returnEvents, $returnThis);
+        }
+        return $returnEvents;
+    }
+
+    //timelapse:
+    public function getTimeLapse($camera) //Presence
+    {
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+        if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for getTimeLapse()');
+        }
+
+        date_default_timezone_set($this->_timeZone);
+        $now = date('d_m_Y_H_i');
+        $filename = 'presence_timelapse_'.$now.'.mp4';
+
+        if ( is_writable(__DIR__))
+            {
+                $vpn = $camera['vpn'];
+                $command = '/command/dl/timelapse&filename='.$filename;
+                $url = $vpn.$command;
+
+                $answer = $this->_request('GET', $url);
+
+                $file = fopen(__DIR__.'/'.$filename, "w+");
+                fputs($file, $answer);
+                fclose($file);
+                return $filename;
+            }
+
+        return array('result'=>null, 'error' => 'Can\' write in script folder');
+    }
+
+    //return fulldatas:
+    public function getNetatmoDatas()
+    {
+        return $this->_fullDatas;
+    }
+
+
     //SET:
+    public function setMonitoring($camera, $mode='on') //Presence - Welcome
+    {
+        //on off
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+        if ( isset($camera['error']) ) return $camera;
+
+        $vpn = $camera['vpn'];
+        $command = '/command/changestatus?status='.$mode;
+        $url = $vpn.$command;
+
+        $answer = $this->_request('GET', $url);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    //___Presence:
     //for alerts: 0=ignore, 1=record, 2=record and notify
-    public function setHumanAlert($value=1)
+    public function setHumanOutAlert($value=1) //Presence
     {
         $mode = null;
         if ($value == 0) $mode = 'ignore';
@@ -136,8 +264,7 @@ class NetatmoPresenceAPI {
         $answer = json_decode($answer, true);
         return array('result'=>$answer);
     }
-
-    public function setAnimalAlert($value=1)
+    public function setAnimalOutAlert($value=1) //Presence
     {
         $mode = null;
         if ($value == 0) $mode = 'ignore';
@@ -153,8 +280,7 @@ class NetatmoPresenceAPI {
         $answer = json_decode($answer, true);
         return array('result'=>$answer);
     }
-
-    public function setVehicleAlert($value=1)
+    public function setVehicleOutAlert($value=1) //Presence
     {
         $mode = null;
         if ($value == 0) $mode = 'ignore';
@@ -170,8 +296,7 @@ class NetatmoPresenceAPI {
         $answer = json_decode($answer, true);
         return array('result'=>$answer);
     }
-
-    public function setOtherAlert($value=1)
+    public function setOtherOutAlert($value=1) //Presence
     {
         $mode = null;
         if ($value == 0) $mode = 'ignore';
@@ -187,8 +312,7 @@ class NetatmoPresenceAPI {
         $answer = json_decode($answer, true);
         return array('result'=>$answer);
     }
-
-    public function setAlertFrom($from='00:00')
+    public function setOutAlertFrom($from='00:00') //Presence
     {
         $var = explode(':', $from);
         if (count($var)==2)
@@ -210,8 +334,7 @@ class NetatmoPresenceAPI {
         $answer = json_decode($answer, true);
         return array('result'=>$answer);
     }
-
-    public function setAlertTo($to='23:59')
+    public function setOutAlertTo($to='23:59') //Presence
     {
         $var = explode(':', $from);
         if (count($var)==2)
@@ -234,10 +357,16 @@ class NetatmoPresenceAPI {
         return array('result'=>$answer);
     }
 
-    public function setSmartZones($camera, $zone1=null, $zone2=null, $zone3=null, $zone4=null) //zone as array(x, y, width, height)
+    public function setSmartZones($camera, $zone1=null, $zone2=null, $zone3=null, $zone4=null) //Presence
     {
+        //zone as array(x, y, width, height)
         if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for setSmartZones()');
+        }
 
         $zones = func_get_args();
         array_shift($zones); //remove $camera
@@ -289,26 +418,16 @@ class NetatmoPresenceAPI {
         return array('result'=>$answer);
     }
 
-    //monitoring:
-    public function setMonitoring($camera, $mode='on') //on off
+    public function setLightMode($camera, $mode='auto') //Presence
     {
+        //auto on off
         if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
 
-        $vpn = $camera['vpn'];
-        $command = '/command/changestatus?status='.$mode;
-        $url = $vpn.$command;
-
-        $answer = $this->_request('GET', $url);
-        $answer = json_decode($answer, true);
-        return array('result'=>$answer);
-    }
-
-    //floodlight settings:
-    public function setLightMode($camera, $mode='auto') //auto on off
-    {
-        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
-        if ( isset($camera['error']) ) return $camera;
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for setLightMode()');
+        }
 
         $vpn = $camera['vpn'];
         $config = '{"mode":"'.$mode.'"}';
@@ -320,11 +439,15 @@ class NetatmoPresenceAPI {
         return array('result'=>$answer);
     }
 
-    //floodlight intensity
-    public function setLightIntensity($camera, $intensity=100) //100
+    public function setLightIntensity($camera, $intensity=100) //Presence
     {
         if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for setLightIntensity()');
+        }
 
         $vpn = $camera['vpn'];
         $config = '{"intensity":"'.$intensity.'"}';
@@ -336,11 +459,15 @@ class NetatmoPresenceAPI {
         return array('result'=>$answer);
     }
 
-    //floodlight turning on in auto mode for:
-    public function setLightAutoMode($camera, $always=true, $person=true, $vehicle=true, $animal=true, $movement=true) // true false
+    public function setLightAutoMode($camera, $always=true, $person=true, $vehicle=true, $animal=true, $movement=true) //Presence
     {
         if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for setLightAutoMode()');
+        }
 
         $config = '{"night":{
                             "always":'.var_export($always,true).',
@@ -359,9 +486,224 @@ class NetatmoPresenceAPI {
         return array('result'=>$answer);
     }
 
+    //___Welcome:
+    public function setPersonAway($person) //Welcome
+    {
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $url = $this->_urlHost.'/api/setpersonsaway';
+        $post = 'home_id='.$this->_home['id'].'&'.'person_id='.$personID;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setPersonAtHome($person) //Welcome
+    {
+        //{"home_id":"584bf3f569f7405e8b8c955b","person_ids":["3381d52d-255a-4efc-9ad8-4dddd488784d"]}
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $url = $this->_urlHost.'/api/setpersonshome';
+        $post = 'home_id='.$this->_home['id'].'&'.'person_ids=["'.$personID.'"]';
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setHomeEmpty() //Welcome
+    {
+        $url = $this->_urlHost.'/api/setpersonsaway';
+        $post = 'home_id='.$this->_home['id'];
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setUnknownFacesInAlert($value='always') //Welcome
+    {
+        //'nobody' or 'always'
+        $mode = null;
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "nobody", "always" as parameter.');
+
+        //never, empty, always
+        $setting = 'notify_unknowns';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setAwayHomeAfter($minutes=240) //Welcome
+    {
+        $seconds = $minutes*60;
+        $setting = 'gone_after';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$seconds;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setMotionInRecord($value='always') //Welcome
+    {
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "nobody", "always" as parameter.');
+
+        $setting = 'record_movements';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setMotionInAlert($value='always') //Welcome
+    {
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "nobody", "always" as parameter.');
+
+        $setting = 'notify_movements';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setPersonInRecord($person, $value='arrive') //Welcome
+    {
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'arrive') $mode = 'on_arrival';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "arrive", "always" as parameter.');
+
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $url = $this->_urlHost.'/api/updateperson';
+        $post = 'home_id='.$this->_home['id'].'&person_id='.$personID.'&pseudo='.$person['pseudo'].'&record_rule='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setPersonArriveAlert($person, $alert=1) //Welcome
+    {
+        $mode = null;
+        if ($alert == 0) $mode = 'false';
+        if ($alert == 1) $mode = 'true';
+        if (!isset($mode)) return array('error'=>'Use 0 (disable) or 1 (enable) as parameter.');
+
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $url = $this->_urlHost.'/api/updateperson';
+        $post = 'home_id='.$this->_home['id'].'&person_id='.$personID.'&pseudo='.$person['pseudo'].'&notify_on_arrival='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setPersonInAlertFromTo($person, $from='00:00', $to='23:59') //Welcome
+    {
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $var = explode(':', $from);
+        if (count($var)==2)
+        {
+            $h = $var[0];
+            $m = $var[1];
+            $from = $h*3600 + $m*60;
+        }
+        else
+        {
+            return array('result'=>null, 'error'=>'Use time as string "10:30"');
+        }
+
+        $var = explode(':', $to);
+        if (count($var)==2)
+        {
+            $h = $var[0];
+            $m = $var[1];
+            $to = $h*3600 + $m*60;
+        }
+        else
+        {
+            return array('result'=>null, 'error'=>'Use time as string "10:30"');
+        }
+
+        if ( is_string($person) ) $person = $this->getPersonByName($person);
+        if ( isset($person['error']) ) return $person;
+        $personID = $person['id'];
+
+        $url = $this->_urlHost.'/api/updateperson';
+        $post = 'home_id='.$this->_home['id'].'&person_id='.$personID.'&pseudo='.$person['pseudo'].'&notification_begin='.$from.'&notification_end='.$to;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setAlarmInDetected($value='never') //Welcome
+    {
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "nobody", "always" as parameter.');
+
+        $setting = 'record_alarms';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    /*
+    //not yet implemented by Netatmo!
+    public function setWAnimalAlert($alert='never')
+    {
+        //datas['body']['homes'][$this->_homeID]['notify_animals']
+    }
+
+    public function setWAnimalRecord($mode='never')
+    {
+        //datas['body']['homes'][$this->_homeID]['record_animals']
+    }
+    */
+
 
     //internal functions==================================================
-    public function getDatas($eventNum=10) //request home datas
+    protected function getDatas($eventNum=10) //request home datas
     {
         //get homedata
         $url = $this->_urlHost.'/api/gethomedata'."&size=".$eventNum;
@@ -370,55 +712,138 @@ class NetatmoPresenceAPI {
         $jsonDatas = json_decode($answer, true);
         $this->_fullDatas = $jsonDatas;
 
-        $homedata = $this->_fullDatas['body']['homes'][0];
+        if ($this->_homeID == -1)
+        {
+            $var = $this->getHomeByName();
+            if (!$var == true) return $var;
+        }
+
+        $homedata = $this->_fullDatas['body']['homes'][$this->_homeID];
         $data = array(
                 'id' => $homedata['id'],
                 'name' => $homedata['name'],
+                'share_info' => $homedata['share_info'],
+                'gone_after' => $homedata['gone_after'],
                 'smart_notifs' => $homedata['smart_notifs'],
-                'presence_record_humans' => $homedata['presence_record_humans'],
-                'presence_record_vehicles' => $homedata['presence_record_vehicles'],
-                'presence_record_animals' => $homedata['presence_record_animals'],
-                'presence_record_alarms' => $homedata['presence_record_alarms'],
-                'presence_record_movements' => $homedata['presence_record_movements'],
-                'presence_notify_from' => gmdate('H:i', $homedata['presence_notify_from']),
-                'presence_notify_to' => gmdate('H:i', $homedata['presence_notify_to']),
-                'presence_enable_notify_from_to' => $homedata['presence_enable_notify_from_to'],
+                'presence_record_humans' => $homedata['presence_record_humans'], //Presence
+                'presence_record_vehicles' => $homedata['presence_record_vehicles'], //Presence
+                'presence_record_animals' => $homedata['presence_record_animals'], //Presence
+                'presence_record_alarms' => $homedata['presence_record_alarms'], //Presence
+                'presence_record_movements' => $homedata['presence_record_movements'], //Presence
+                'presence_notify_from' => gmdate('H:i', $homedata['presence_notify_from']), //Presence
+                'presence_notify_to' => gmdate('H:i', $homedata['presence_notify_to']), //Presence
+                'presence_enable_notify_from_to' => $homedata['presence_enable_notify_from_to'], //Presence
+                'notify_movements' => $homedata['notify_movements'], //welcome
+                'record_movements' => $homedata['record_movements'], //welcome
+                'notify_unknowns' => $homedata['notify_unknowns'], //welcome
+                'record_alarms' => $homedata['record_alarms'], //welcome
+                'record_animals' => $homedata['record_animals'], //welcome
+                'notify_animals' => $homedata['notify_animals'], //welcome
+                'events_ttl' => $homedata['events_ttl'], //welcome
                 'place' => $homedata['place']
                 );
         $this->_home = $data;
+        $this->_homeName = $homedata['name'];
+        $this->_timeZone = $homedata['place']['timezone'];
+
+        //get Persons:
+        $this->getPersons();
+
+        return true;
     }
 
-    protected function getCamByName($name)
+    protected function getPersons() //Welcome
+    {
+        if (is_null($this->_fullDatas)) $this->getDatas();
+        $homeDatas = $this->_fullDatas;
+
+        $personsArray = array();
+        if ( isset($homeDatas['body']['homes'][$this->_homeID]['persons']) )
+        {
+            $persons = $homeDatas['body']['homes'][$this->_homeID]['persons'];
+            foreach ($persons as $person)
+            {
+                $thisPerson = array();
+                $pseudo = 'Unknown';
+                if ( isset($person['pseudo']) ) $pseudo = $person['pseudo'];
+                $thisPerson['pseudo'] = $pseudo;
+                $thisPerson['id'] = $person['id'];
+                $lastseen = $person['last_seen'];
+                if ($lastseen == 0) $thisPerson['last_seen'] = 'Been long';
+                else $thisPerson['last_seen'] = date("d-m-Y H:i:s", $person['last_seen']);
+                $thisPerson['out_of_sight'] = $person['out_of_sight'];
+                $thisPerson['record'] = $person['record'];
+                $thisPerson['notify_on_arrival'] = $person['notify_on_arrival'];
+                $thisPerson['notification_begin'] = $person['notification_begin'];
+                $thisPerson['notification_end'] = $person['notification_end'];
+                array_push($personsArray, $thisPerson);
+            }
+
+            $this->_persons = $personsArray;
+            return $personsArray;
+        }
+        else return array('None');
+    }
+
+    protected function getPersonByName($name) //Welcome
+    {
+        if (empty($this->_persons)) return array('result'=>null, 'error' => 'No person defined in this home.');
+
+        foreach ($this->_persons as $thisPerson)
+        {
+            if ($thisPerson['pseudo'] == $name) return $thisPerson;
+        }
+        return array('result'=>null, 'error' => 'Unfound person');
+    }
+
+    protected function getHomeByName()
+    {
+        $fullData = $this->_fullDatas['body']['homes'];
+        $idx = 0;
+        foreach ($fullData as $home)
+        {
+            if ($home['name'] == $this->_homeName)
+            {
+                $this->_homeID = $idx;
+                return true;
+            }
+            $idx ++;
+        }
+        $this->error = "Can't find home named ".$this->_homeName;
+    }
+
+    protected function getCamByName($name) //Presence - Welcome
     {
         foreach ($this->_cameras as $thisCamera)
         {
             if ($thisCamera['name'] == $name) return $thisCamera;
         }
         return array('result'=>null, 'error' => 'Unfound camera');
-
     }
 
-    protected function getCamerasDatas($getSettings=false)
+    protected function getCamerasDatas() //Presence - Welcome
     {
         if (is_null($this->_fullDatas)) $this->getDatas();
 
         $allCameras = array();
-        foreach ($this->_fullDatas['body']['homes'][0]['cameras'] as $thisCamera)
+        foreach ($this->_fullDatas['body']['homes'][$this->_homeID]['cameras'] as $thisCamera)
         {
+            //live and snapshots:
+            $cameraVPN = (isset($thisCamera['vpn_url']) ? $thisCamera['vpn_url'] : null);
+            $isLocal = (isset($thisCamera['is_local']) ? $thisCamera['is_local'] : false);
+
+            $cameraSnapshot = null;
+            $cameraLive = null;
+
+            if ($cameraVPN != null)
+            {
+                $cameraLive = ($isLocal == false ? $cameraVPN.'/live/index.m3u8' : $cameraVPN.'/live/index_local.m3u8');
+                $cameraSnapshot = $cameraVPN.'/live/snapshot_720.jpg';
+            }
+
+            //which camera model:
             if ($thisCamera['type'] == 'NOC') //Presence
             {
-                $cameraVPN = (isset($thisCamera['vpn_url']) ? $thisCamera['vpn_url'] : null);
-                $isLocal = (isset($thisCamera['is_local']) ? $thisCamera['is_local'] : false);
-
-                $cameraSnapshot = null;
-                $cameraLive = null;
-
-                if ($cameraVPN != null)
-                {
-                    $cameraLive = ($isLocal == false ? $cameraVPN.'/live/index.m3u8' : $cameraVPN.'/live/index_local.m3u8');
-                    $cameraSnapshot = $cameraVPN.'/live/snapshot_720.jpg';
-                }
-
                 $camera = array('name' => $thisCamera['name'],
                                 'id' => $thisCamera['id'],
                                 'firmware' => $thisCamera['firmware'],
@@ -430,45 +855,89 @@ class NetatmoPresenceAPI {
                                 'alim_status' => $thisCamera['alim_status'],
                                 'light_mode_status' => $thisCamera['light_mode_status'],
                                 'is_local' => $isLocal,
+                                'timelapse_available' => $thisCamera['timelapse_available'],
                                 'type' => 'Presence'
                                 );
 
-                if ($getSettings==true and $camera['type']=='Presence') $camera = $this->getCameraSettings($camera);
+                array_push($allCameras, $camera);
+            }
+            elseif ($thisCamera['type'] == 'NACamera') //Welcome:
+            {
+                $camera = array('name' => $thisCamera['name'],
+                                'id' => $thisCamera['id'],
+                                'vpn' => $cameraVPN,
+                                'snapshot' => $cameraSnapshot,
+                                'live' => $cameraLive,
+                                'status' => $thisCamera['status'],
+                                'sd_status' => $thisCamera['sd_status'],
+                                'alim_status' => $thisCamera['alim_status'],
+                                'is_local' => $isLocal,
+                                'type' => 'Welcome'
+                                );
+
                 array_push($allCameras, $camera);
             }
         }
         $this->_cameras = $allCameras;
+
+        //sort events:
+        $outdoorCams = array();
+        $indoorCams = array();
+        foreach ($this->_cameras as $cam)
+        {
+            if ($cam['type'] == 'Presence') array_push($outdoorCams, $cam['id']);
+            if ($cam['type'] == 'Welcome') array_push($indoorCams, $cam['id']);
+        }
+        $cameraEvents = $this->_fullDatas['body']['homes'][$this->_homeID]['events'];
+        foreach ($cameraEvents as $event)
+        {
+            if (in_array($event['camera_id'], $outdoorCams)) array_push($this->_outdoorEvents, $event);
+            if (in_array($event['camera_id'], $indoorCams)) array_push($this->_indoorEvents, $event);
+        }
+
         return $allCameras;
     }
 
-    protected function getCameraSettings($camera)
+    protected function getCameraConfig($camera) //Presence - Welcome
     {
-        if ( is_string($camera) ) $camera = $this->getCamera($camera);
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
         if ( isset($camera['error']) ) return $camera;
 
         //get camera conf:
-        if ($camera['status'] == 'on')
+        $vpn = $camera['vpn'];
+        $command = '/command/getsetting';
+        $url = $vpn.$command;
+
+        $answer = $this->_request('GET', $url);
+        $answer = json_decode($answer, true);
+
+        if ($camera['type'] == 'Presence')
         {
-            $vpn = $camera['vpn'];
-            $command = '/command/getsetting';
-            $url = $vpn.$command;
-
-            $answer = $this->_request('GET', $url);
-            $answer = json_decode($answer, true);
-
             $camera['error_status'] = $answer['error']['code'].' '.$answer['error']['message'];
             $camera['image_orientation'] = $answer['conf']['image_orientation'];
             $camera['audio'] = $answer['conf']['audio'];
 
             //get camera light settings:
-            $command = '/command/floodlight_get_config';
-            $url = $vpn.$command;
+            if ($camera['error_status'] == '200 OK')
+            {
+                $command = '/command/floodlight_get_config';
+                $url = $vpn.$command;
 
-            $answer = $this->_request('GET', $url);
-            $answer = json_decode($answer, true);
+                $answer = $this->_request('GET', $url);
+                $answer = json_decode($answer, true);
 
-            $camera['light'] = $answer;
+                $camera['light'] = $answer;
+            }
         }
+        elseif ($camera['type'] == 'Welcome')
+        {
+            $camera['error_status'] = $answer['error']['code'].' '.$answer['error']['message'];
+            $camera['mirror'] = $answer['conf']['mirror'];
+            $camera['audio'] = $answer['conf']['audio'];
+            $camera['irmode'] = $answer['conf']['irmode'];
+            $camera['led_on_live'] = $answer['conf']['led_on_live'];
+        }
+
         return $camera;
     }
 
@@ -537,10 +1006,16 @@ class NetatmoPresenceAPI {
     public $_csrf = null;
     public $_csrfName = null;
     public $_token = null;
+    public $_homeID = 0;
+    public $_homeName = null;
+    public $_timeZone = null;
     public $_home = null;
+    public $_cameras = array();
+    public $_persons = array();
 
-    public $_cameras;
-    public $_fullDatas;
+    protected $_fullDatas;
+    protected $_indoorEvents = array();
+    protected $_outdoorEvents = array();
 
     protected $_Netatmo_user;
     protected $_Netatmo_pass;
@@ -615,15 +1090,19 @@ class NetatmoPresenceAPI {
         return false;
     }
 
-    function __construct($Netatmo_user, $Netatmo_pass)
+    function __construct($Netatmo_user, $Netatmo_pass, $homeName=0)
     {
         $this->_Netatmo_user = urlencode($Netatmo_user);
         $this->_Netatmo_pass = urlencode($Netatmo_pass);
+        if ($homeName !== 0)
+        {
+            $this->_homeName = $homeName;
+            $this->_homeID = -1;
+        }
 
         if ($this->connect() == true)
         {
-            $this->getDatas();
-            $this->getCamerasDatas();
+            if ($this->getDatas() == true) $this->getCamerasDatas();
         }
     }
 
