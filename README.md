@@ -238,6 +238,20 @@ See IFTTTactions.php as an example.
 ## Version history
 
 #### v1.0 (2017-05-25)
+- Repository name changed from php-NetatmoPresenceAPI to php-NetatmoCameraAPI.
+- Now support Netatmo Presence and Welcome cameras.
+- Some functions names have changed to support Welcome, please check your existing script !
+
+#### v0.5 (2017-04-02)
+- Code breaking! Some functions names where confusing, read how-to!
+- New: getHome() return home alerts
+- New: getCamera('my camera') return camera and light settings
+- Changes setLightMode(), setLightIntensity(), setLightAutoMode()
+
+#### v0.2 (2017-03-16)
+- New setSmartZones
+  
+#### v0.1 (2017-03-15)
 - First public version.
 
 [&#8657;](#php-netatmo-camera-api)
