@@ -14,7 +14,7 @@ you can also pass other params with action.php?action=turnlighton&camera=camera1
 //get url variable:
 if(isset($_GET['action']))
 {
-	require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoPresenceAPI.php");
+	require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoCameraAPI.php");
 	$_Presence = new NetatmoPresenceAPI($Netatmo_user, $Netatmo_pass);
     $action = $_GET['action'];
     $cam = 'my camera';
@@ -24,11 +24,11 @@ if(isset($_GET['action']))
 
     if ($action == "turnlighton") $_Presence->setFloodlight($cam, "on");
     if ($action == "turnlightoff") $_Presence->setFloodlight($cam, "off");
-    if ($action == "alerthumanon") $_Presence->setHumanAlert(2);
+    if ($action == "alerthumanon") $_Presence->setHumanOutAlert(2);
     if ($action == "monitoringoff") $_Presence->setMonitoring($cam, "off");
     if ($action == "monitoringon") $_Presence->setMonitoring($cam, "on");
     //http://www.mydomain.com/path/to/action.php?action=setintensity&camera=cam2&param=100
-    if ($action == "setintensity") $_Presence->setIntensity($cam, $param);
+    if ($action == "setintensity") $_Presence->setLightIntensity($cam, $param);
     //etc.
 
 }
