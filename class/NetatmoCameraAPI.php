@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoCameraAPI
 
 class NetatmoCameraAPI {
 
-    public $_version = "1.01";
+    public $_version = "1.02";
 
     //user functions======================================================
     //GET:
@@ -192,7 +192,7 @@ class NetatmoCameraAPI {
             $id = $thisEvent['id'];
             $type = $thisEvent['type'];
             $time = $thisEvent['time'];
-            $time = date('d-m-Y H:i:s', $time);
+            $date = date('d-m-Y H:i:s', $time);
             $camId = $thisEvent['camera_id'];
             $message = $thisEvent['message'];
             foreach ($this->_cameras as $cam)
@@ -206,8 +206,10 @@ class NetatmoCameraAPI {
                 }
 
             $returnThis = array();
-            $returnThis['title'] = $message . ' | '.$time.' | '.$camName;
+            $returnThis['title'] = $message . ' | '.$date.' | '.$camName;
             $returnThis['type'] = $type;
+            $returnThis['time'] = $thisEvent['time'];
+            $returnThis['date'] = $date;
 
 
             if (isset($thisEvent['person_id'])) $returnThis['person_id'] = $thisEvent['person_id'];
@@ -230,6 +232,20 @@ class NetatmoCameraAPI {
         return $returnEvents;
     }
 
+    public function getFtpConfig($camera) //Presence - Welcome
+    {
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+        if ( isset($camera['error']) ) return $camera;
+
+        $vpn = $camera['vpn'];
+        $command = '/command/ftp_get_config';
+        $url = $vpn.$command;
+
+        $answer = $this->_request('GET', $url);
+        $answer = json_decode($answer, true);
+        return $answer;
+    }
+
     //return fulldatas:
     public function getNetatmoDatas()
     {
@@ -247,6 +263,29 @@ class NetatmoCameraAPI {
         $vpn = $camera['vpn'];
         $command = '/command/changestatus?status='.$mode;
         $url = $vpn.$command;
+
+        $answer = $this->_request('GET', $url);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
+
+    public function setFTPenable($camera, $state=true) //Presence - Welcome
+    {
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+        if ( isset($camera['error']) ) return $camera;
+
+        $mode = null;
+        if ($state == true) $mode = 1;
+        if ($state == false) $mode = 0;
+        if (!isset($mode)) return array('error'=>'Use true or false for FTP state.');
+
+
+        $vpn = $camera['vpn'];
+        $config = '{"on_off":'.$mode.'}';
+        $command = '/command/ftp_set_config?config=';
+        $url = $vpn.$command.urlencode($config);
+
+        echo 'url:', $url, "<br>";
 
         $answer = $this->_request('GET', $url);
         $answer = json_decode($answer, true);
