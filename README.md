@@ -46,7 +46,7 @@ Feel free to submit an issue or pull request to add more.
 
 ## Warning
 
-This API will connect directly to your Netatmo account. Regarding your account option, each connection (script execution) may send you an email alert telling that someone connected to your account!
+This API will connect to your Netatmo account. Regarding your account option, each connection (script execution) may send you an email alert telling that someone connected to your account!
 
 To avoid this:
 
@@ -116,10 +116,11 @@ echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><
 $answer = $_NAcams->getOutdoorEvents('All', $num=10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
 
-//get Presence camera timelapse. It will return filename of the mp4 timelapse, located in API folder:
-//for this function to work, the API folder needs write access
-$timelapse = $_NAcams->getTimeLapse();
-echo $timelapse;
+//get Presence camera timelapse.
+//Without second argument, it will return filename of the mp4 timelapse, located in API folder:
+$timelapse = $_NAcams->getTimeLapse('myCamera');
+echo "<pre>timelapse:<br>".json_encode($timelapse, JSON_PRETTY_PRINT)."</pre><br>";
+//or do $_NAcams->getTimeLapse('myCamera', '.'); to put timelapse in your script folder, for example.
 
 //get last 10 indoors events (from Welcome) of all type.
 $answer = $_NAcams->getIndoorEvents($num=10);
@@ -146,35 +147,32 @@ $empty = $_NAcams->isHomeEmpty()
 ```php
 //SET Presence monitoring on/off
 $monitoring = $_NAcams->setMonitoring("myCamera", "on");
+//You can always echo answer to check result ok, or error:
 echo "<pre>monitoring:<br>".json_encode($monitoring, JSON_PRETTY_PRINT)."</pre><br>";
 
 //SET Presence floodlight mode (auto, on, off):
-$floodlight = $_NAcams->setLightMode("myCamera", "auto");
-echo "<pre>floodlight:<br>".json_encode($floodlight, JSON_PRETTY_PRINT)."</pre><br>";
+$_NAcams->setLightMode("myCamera", "auto");
 
 //SET Presence floodlight intensity:
 $_NAcams->setLightIntensity("myCamera", 100);
 
 //SET when Presence floodlight should turn on in auto mode:
 //in order: always, person, vehicle, animal, movement
-$lightAutoMode= $_NAcams->setLightAutoMode("myCamera", false, true, false, false, true);
-echo "<pre>lightAutoMode:<br>".json_encode($lightAutoMode, JSON_PRETTY_PRINT)."</pre><br>";
+$_NAcams->setLightAutoMode("myCamera", false, true, false, false, true);
 
 //SET Presence alert level for human detection:
 //0: ignore, 1: record, 2: record and notify
-$alert = $_NAcams->setHumanOutAlert(1);
-echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
+$_NAcams->setHumanOutAlert(1);
 //and:
-$alert = $_NAcams->setAnimalOutAlert(1);
-$alert = $_NAcams->setVehicleOutAlert(1);
-$alert = $_NAcams->setOtherOutAlert(1);
+$_NAcams->setAnimalOutAlert(1);
+$_NAcams->setVehicleOutAlert(1);
+$_NAcams->setOtherOutAlert(1);
 
 //SET Presence alert time from 10h15 (always use hh:mm)
-$alert = $_NAcams->setOutAlertFrom('10:15');
-echo "<pre>alert:<br>".json_encode($alert, JSON_PRETTY_PRINT)."</pre><br>";
+$_NAcams->setOutAlertFrom('10:15');
 
 //SET Presence alert time to 22h00
-$alert = $_NAcams->setOutAlertTo('22:00');
+$_NAcams->setOutAlertTo('22:00');
 
 /*SET Presence SmartZones:
 - Define zones as array(x, y, width, height)
@@ -189,7 +187,6 @@ $smartZones = $_NAcams->setSmartZones('myCamera', $zone1, $zone2, $zone3, $zone4
 echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 
 //___Welcome:
-
 //set John away from home:
 $_NAcams->setPersonAway('John');
 
@@ -240,7 +237,7 @@ See IFTTTactions.php as an example.
 #### v1.0 (2017-05-25)
 - Repository name changed from php-NetatmoPresenceAPI to php-NetatmoCameraAPI.
 - Now support Netatmo Presence and Welcome cameras.
-- Some functions names have changed to support Welcome, please check your existing script !
+- Some functions names have changed to support Welcome, please check your existing script!
 
 #### v0.5 (2017-04-02)
 - Code breaking! Some functions names where confusing, read how-to!
