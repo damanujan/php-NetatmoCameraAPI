@@ -96,10 +96,6 @@ if (isset($_NAcams->error)) die($_NAcams->error);
 $home = $_NAcams->getHome();
 echo "<pre>home:<br>".json_encode($home, JSON_PRETTY_PRINT)."</pre><br>";
 
-//list your cameras (name, status, etc.):
-$cameras = $_NAcams->getCameras();
-echo "<pre>cameras:<br>".json_encode($cameras, JSON_PRETTY_PRINT)."</pre><br>";
-
 //get camera settings:
 $settings = $_NAcams->getCameraSettings('myCamera');
 echo "<pre>settings:<br>".json_encode($settings, JSON_PRETTY_PRINT)."</pre><br>";
@@ -107,13 +103,17 @@ echo "<pre>settings:<br>".json_encode($settings, JSON_PRETTY_PRINT)."</pre><br>"
 echo $settings ['light_mode_status'].'<br>';
 echo $settings ['light']['intensity'].'<br>';
 
+//get camera ftp settings:
+$ftp = $_NAcams->getFtpConfig('myCamera');
+echo "<pre>ftp:<br>".json_encode($ftp, JSON_PRETTY_PRINT)."</pre><br>";
+
 //get Presence smart zones:
 $smartZones = $_NAcams->getSmartZones('myCamera');
 echo "<pre>smartZones:<br>".json_encode($smartZones, JSON_PRETTY_PRINT)."</pre><br>";
 
 //get last 10 outdoors events (from Presence) of all type.
 //You can request All, or only human, animal, vehicle, movement
-$answer = $_NAcams->getOutdoorEvents('All', $num=10);
+$answer = $_NAcams->getOutdoorEvents('All', 10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
 
 //get Presence camera timelapse.
@@ -123,7 +123,7 @@ echo "<pre>timelapse:<br>".json_encode($timelapse, JSON_PRETTY_PRINT)."</pre><br
 //or do $_NAcams->getTimeLapse('myCamera', '.'); to put timelapse in your script folder, for example.
 
 //get last 10 indoors events (from Welcome) of all type.
-$answer = $_NAcams->getIndoorEvents($num=10);
+$answer = $_NAcams->getIndoorEvents(10);
 echo "<pre>answer:<br>".json_encode($answer, JSON_PRETTY_PRINT)."</pre><br>";
 
 //get John settings:
@@ -145,22 +145,25 @@ $empty = $_NAcams->isHomeEmpty()
 *Change camera name by yours!*
 
 ```php
-//SET Presence monitoring on/off
-$monitoring = $_NAcams->setMonitoring("myCamera", "on");
+//set Camera monitoring on/off
+$monitoring = $_NAcams->setMonitoring('myCamera', 'on');
 //You can always echo answer to check result ok, or error:
 echo "<pre>monitoring:<br>".json_encode($monitoring, JSON_PRETTY_PRINT)."</pre><br>";
 
-//SET Presence floodlight mode (auto, on, off):
+//set Camera ftp state (true/false)
+$_NAcams->setFTPenable('myCamera', true);
+
+//set Presence floodlight mode (auto, on, off):
 $_NAcams->setLightMode("myCamera", "auto");
 
-//SET Presence floodlight intensity:
-$_NAcams->setLightIntensity("myCamera", 100);
+//set Presence floodlight intensity:
+$_NAcams->setLightIntensity('myCamera', 100);
 
-//SET when Presence floodlight should turn on in auto mode:
+//set when Presence floodlight should turn on in auto mode:
 //in order: always, person, vehicle, animal, movement
-$_NAcams->setLightAutoMode("myCamera", false, true, false, false, true);
+$_NAcams->setLightAutoMode('myCamera', false, true, false, false, true);
 
-//SET Presence alert level for human detection:
+//set Presence alert level for human detection:
 //0: ignore, 1: record, 2: record and notify
 $_NAcams->setHumanOutAlert(1);
 //and:
@@ -168,13 +171,13 @@ $_NAcams->setAnimalOutAlert(1);
 $_NAcams->setVehicleOutAlert(1);
 $_NAcams->setOtherOutAlert(1);
 
-//SET Presence alert time from 10h15 (always use hh:mm)
+//set Presence alert time from 10h15 (always use hh:mm)
 $_NAcams->setOutAlertFrom('10:15');
 
-//SET Presence alert time to 22h00
+//set Presence alert time to 22h00
 $_NAcams->setOutAlertTo('22:00');
 
-/*SET Presence SmartZones:
+/*set Presence SmartZones:
 - Define zones as array(x, y, width, height)
 - Send at least one zone
 - The API check for overlapping zones and don't send them to camera if so.
@@ -234,7 +237,11 @@ See IFTTTactions.php as an example.
 
 ## Version history
 
-#### v1.0 (2017-05-25)
+#### v1.02 (2017-05-25)
+- New: getFtpConfig($CameraName) return hostname, login, port, path, state, video quality
+- New: setFTPenable($CameraName, $state), true / false
+
+#### v1.0 (2017-05-24)
 - Repository name changed from php-NetatmoPresenceAPI to php-NetatmoCameraAPI.
 - Now support Netatmo Presence and Welcome cameras.
 - Some functions names have changed to support Welcome, please check your existing script!
