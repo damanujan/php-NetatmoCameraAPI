@@ -92,9 +92,14 @@ if (isset($_NAcams->error)) die($_NAcams->error);
 *Change camera name by yours!*
 
 ```php
-//get home settings, with alert/recording settings:
-$home = $_NAcams->getHome();
-echo "<pre>home:<br>".json_encode($home, JSON_PRETTY_PRINT)."</pre><br>";
+//get home settings, with alerts/recording settings, cameras, persons:
+echo "<pre>", json_encode($_NAcams, JSON_PRETTY_PRINT), "</pre><br>";
+//or just cameras:
+echo "<pre>", json_encode($_NAcams->_cameras, JSON_PRETTY_PRINT), "</pre><br>";
+//global settings (alerts/recording settings):
+echo "<pre>", json_encode($_NAcams->_home, JSON_PRETTY_PRINT), "</pre><br>";
+//persons:
+echo "<pre>", json_encode($_NAcams->_persons, JSON_PRETTY_PRINT), "</pre><br>";
 
 //get camera settings:
 $settings = $_NAcams->getCameraSettings('myCamera');
