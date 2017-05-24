@@ -1,13 +1,13 @@
 <?php
 /*
 
-https://github.com/KiboOst/php-NetatmoPresenceAPI
+https://github.com/KiboOst/php-NetatmoCameraAPI
 
 */
 
 class NetatmoCameraAPI {
 
-    public $_version = "1.0";
+    public $_version = "1.01";
 
     //user functions======================================================
     //GET:
@@ -46,7 +46,7 @@ class NetatmoCameraAPI {
         return $answer;
     }
 
-    public function getOutdoorEvents($requestType="All", $num=1) //Presence
+    public function getOutdoorEvents($requestType="All", $num=5) //Presence
     {
         //human, animal, vehicle, All
         //will return the last event of defined type as array of [title, snapshotURL, vignetteURL]
@@ -109,12 +109,47 @@ class NetatmoCameraAPI {
                         $returnThis['type'] = $eventType;
                         $returnThis['snapshotURL'] = $snapshotURL;
                         $returnThis['vignetteURL'] = $vignetteURL;
+
+                        $returnThis['camera_id'] = $camId;
+                        $returnThis['event_id'] = $id;
                         array_push($returnEvents, $returnThis);
                     }
             }
         }
 
         return $returnEvents;
+    }
+
+    public function getTimeLapse($camera, $folderPath=__DIR__) //Presence
+    {
+        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
+        if ( isset($camera['error']) ) return $camera;
+
+        if ($camera['type'] != 'Presence')
+        {
+            return array('result'=>null, 'error' => 'Unsupported camera for getTimeLapse()');
+        }
+
+        date_default_timezone_set($this->_timeZone);
+        $now = date('d_m_Y_H_i');
+        $filename = 'presence_timelapse_'.$now.'.mp4';
+        $filePath = $folderPath.'/'.$filename;
+
+        //write it to file:
+        if (is_writable($folderPath))
+        {
+            $vpn = $camera['vpn'];
+            $command = '/command/dl/timelapse&filename='.$filename;
+            $url = $vpn.$command;
+
+            $answer = $this->_request('GET', $url);
+
+            $put = file_put_contents($filePath, $answer);
+            if ($put) return array('result'=>$filePath);
+        }
+        return array('result'=>$datasArray, 'error'=>'Unable to write file!');
+
+        return array('result'=>null, 'error' => 'Can\'t write in script folder');
     }
 
     //Welcome:
@@ -141,7 +176,7 @@ class NetatmoCameraAPI {
         return false;
     }
 
-    public function getIndoorEvents($num=1) //Welcome
+    public function getIndoorEvents($num=5) //Welcome
     {
         if (is_null($this->_fullDatas)) $this->getDatas();
         if (is_null($this->_cameras)) $this->getCameras();
@@ -174,6 +209,7 @@ class NetatmoCameraAPI {
             $returnThis['title'] = $message . ' | '.$time.' | '.$camName;
             $returnThis['type'] = $type;
 
+
             if (isset($thisEvent['person_id'])) $returnThis['person_id'] = $thisEvent['person_id'];
 
             if (isset($thisEvent['snapshot']))
@@ -186,41 +222,12 @@ class NetatmoCameraAPI {
             }
 
             if (isset($thisEvent['is_arrival'])) $returnThis['is_arrival'] = $thisEvent['is_arrival'];
+            $returnThis['camera_id'] = $camId;
+            $returnThis['event_id'] = $id;
+
             array_push($returnEvents, $returnThis);
         }
         return $returnEvents;
-    }
-
-    //timelapse:
-    public function getTimeLapse($camera) //Presence
-    {
-        if ( is_string($camera) ) $camera = $this->getCamByName($camera);
-        if ( isset($camera['error']) ) return $camera;
-
-        if ($camera['type'] != 'Presence')
-        {
-            return array('result'=>null, 'error' => 'Unsupported camera for getTimeLapse()');
-        }
-
-        date_default_timezone_set($this->_timeZone);
-        $now = date('d_m_Y_H_i');
-        $filename = 'presence_timelapse_'.$now.'.mp4';
-
-        if ( is_writable(__DIR__))
-            {
-                $vpn = $camera['vpn'];
-                $command = '/command/dl/timelapse&filename='.$filename;
-                $url = $vpn.$command;
-
-                $answer = $this->_request('GET', $url);
-
-                $file = fopen(__DIR__.'/'.$filename, "w+");
-                fputs($file, $answer);
-                fclose($file);
-                return $filename;
-            }
-
-        return array('result'=>null, 'error' => 'Can\' write in script folder');
     }
 
     //return fulldatas:
@@ -247,7 +254,6 @@ class NetatmoCameraAPI {
     }
 
     //___Presence:
-    //for alerts: 0=ignore, 1=record, 2=record and notify
     public function setHumanOutAlert($value=1) //Presence
     {
         $mode = null;
@@ -503,7 +509,6 @@ class NetatmoCameraAPI {
 
     public function setPersonAtHome($person) //Welcome
     {
-        //{"home_id":"584bf3f569f7405e8b8c955b","person_ids":["3381d52d-255a-4efc-9ad8-4dddd488784d"]}
         if ( is_string($person) ) $person = $this->getPersonByName($person);
         if ( isset($person['error']) ) return $person;
         $personID = $person['id'];
@@ -528,13 +533,11 @@ class NetatmoCameraAPI {
 
     public function setUnknownFacesInAlert($value='always') //Welcome
     {
-        //'nobody' or 'always'
         $mode = null;
         if ($value == 'nobody') $mode = 'empty';
         if ($value == 'always') $mode = 'always';
         if (!isset($mode)) return array('error'=>'Use "nobody", "always" as parameter.');
 
-        //never, empty, always
         $setting = 'notify_unknowns';
         $url = $this->_urlHost.'/api/updatehome';
         $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
@@ -659,10 +662,6 @@ class NetatmoCameraAPI {
             return array('result'=>null, 'error'=>'Use time as string "10:30"');
         }
 
-        if ( is_string($person) ) $person = $this->getPersonByName($person);
-        if ( isset($person['error']) ) return $person;
-        $personID = $person['id'];
-
         $url = $this->_urlHost.'/api/updateperson';
         $post = 'home_id='.$this->_home['id'].'&person_id='.$personID.'&pseudo='.$person['pseudo'].'&notification_begin='.$from.'&notification_end='.$to;
 
@@ -688,22 +687,63 @@ class NetatmoCameraAPI {
         return array('result'=>$answer);
     }
 
-    /*
-    //not yet implemented by Netatmo!
-    public function setWAnimalAlert($alert='never')
+    public function deleteEvent($eventId)
     {
-        //datas['body']['homes'][$this->_homeID]['notify_animals']
+        $events = $this->_fullDatas['body']['homes'][$this->_homeID]['events'];
+        foreach ($events as $event)
+        {
+            if ($event['id'] == $eventId)
+            {
+                $camId = $event['camera_id'];
+                $url = $this->_urlHost.'/api/deleteevent';
+                $post = 'home_id='.$this->_home['id'].'&camera_id='.$camId.'&event_id='.$eventId;
+
+                $answer = $this->_request('POST', $url, $post);
+                $answer = json_decode($answer, true);
+                return array('result'=>$answer);
+            }
+        }
+        return array('result'=>null, 'error' => 'Can\'t find this event ID');
     }
 
-    public function setWAnimalRecord($mode='never')
+    //not yet implemented by Netatmo!
+    public function setAnimalInAlert($value='never') //Welcome
     {
-        //datas['body']['homes'][$this->_homeID]['record_animals']
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "nobody", "always" as parameter.');
+
+        $setting = 'notify_animals';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
     }
-    */
+
+    public function setAnimalInRecord($value='never') //Welcome
+    {
+        $mode = null;
+        if ($value == 'never') $mode = 'never';
+        if ($value == 'nobody') $mode = 'empty';
+        if ($value == 'always') $mode = 'always';
+        if (!isset($mode)) return array('error'=>'Use "never", "nobody", "always" as parameter.');
+
+        $setting = 'record_animals';
+        $url = $this->_urlHost.'/api/updatehome';
+        $post = 'home_id='.$this->_home['id'].'&'.$setting.'='.$mode;
+
+        $answer = $this->_request('POST', $url, $post);
+        $answer = json_decode($answer, true);
+        return array('result'=>$answer);
+    }
 
 
     //internal functions==================================================
-    protected function getDatas($eventNum=10) //request home datas
+    protected function getDatas($eventNum=100) //request home datas
     {
         //get homedata
         $url = $this->_urlHost.'/api/gethomedata'."&size=".$eventNum;
@@ -1105,8 +1145,5 @@ class NetatmoCameraAPI {
             if ($this->getDatas() == true) $this->getCamerasDatas();
         }
     }
-
-//NetatmoPresenceAPI end
-}
-
+} //NetatmoCameraAPI end
 ?>
