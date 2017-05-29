@@ -7,7 +7,7 @@ https://github.com/KiboOst/php-NetatmoCameraAPI
 
 class NetatmoCameraAPI {
 
-    public $_version = "1.02";
+    public $_version = "1.03";
 
     //user functions======================================================
     //GET:
@@ -381,7 +381,7 @@ class NetatmoCameraAPI {
     }
     public function setOutAlertTo($to='23:59') //Presence
     {
-        $var = explode(':', $from);
+        $var = explode(':', $to);
         if (count($var)==2)
         {
             $h = $var[0];
