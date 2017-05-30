@@ -73,14 +73,16 @@ Or:
 #### Connection
 
 ```php
-require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoCameraAPI.php");
+$Netatmo_user = 'myNetatmoLogin';
+$Netatmo_pass = 'myNetatmoPass';
+require($_SERVER['DOCUMENT_ROOT'].'/path/to/NetatmoCameraAPI.php');
 $_NAcams = new NetatmoCameraAPI($Netatmo_user, $Netatmo_pass);
 if (isset($_NAcams->error)) die($_NAcams->error);
 ```
 
 If you have several houses on your Netatmo account, you can specify home name:
 ```php
-require($_SERVER['DOCUMENT_ROOT']."/path/to/NetatmoCameraAPI.php");
+require($_SERVER['DOCUMENT_ROOT'].'/path/to/NetatmoCameraAPI.php');
 $_NAcams = new NetatmoCameraAPI($Netatmo_user, $Netatmo_pass, 'myTinyHouse');
 if (isset($_NAcams->error)) die($_NAcams->error);
 ```
